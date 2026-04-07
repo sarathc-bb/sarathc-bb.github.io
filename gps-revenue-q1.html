@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consolidated Revenue Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117; --card: #1a1d2e; --border: #2a2d42;
+    --text: #e2e4ed; --muted: #8b8fa3; --accent1: #6366f1;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+  .header { background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#4338ca 100%); padding:32px 48px; border-bottom:3px solid var(--accent1); }
+  .header h1 { font-size:28px; font-weight:700; letter-spacing:-0.5px; }
+  .header p { color:#a5b4fc; margin-top:6px; font-size:14px; }
+
+  .kpi-strip { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; padding:24px 48px; }
+  .kpi { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px 24px; position:relative; overflow:hidden; }
+  .kpi::before { content:''; position:absolute; top:0; left:0; width:4px; height:100%; background:var(--accent1); }
+  .kpi .label { font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:8px; }
+  .kpi .value { font-size:26px; font-weight:700; }
+  .kpi .sub { font-size:12px; margin-top:6px; color:var(--muted); }
+  .kpi .change { font-size:12px; margin-top:4px; }
+  .kpi .change.up { color:#10b981; } .kpi .change.down { color:#ef4444; }
+
+  .grid { display:grid; gap:20px; padding:0 48px 32px; }
+  .grid-2 { grid-template-columns:1fr 1fr; }
+  .grid-full { grid-template-columns:1fr; }
+
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:24px; }
+  .card h3 { font-size:15px; font-weight:600; margin-bottom:16px; color:var(--text); display:flex; align-items:center; gap:8px; }
+  .card h3 .dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+
+  .chart-container { position:relative; width:100%; }
+  .chart-container.tall { height:380px; }
+  .chart-container.medium { height:320px; }
+
+  .heat-table { width:100%; border-collapse:separate; border-spacing:4px; }
+  .heat-table th { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); padding:8px 12px; text-align:left; }
+  .heat-table td { padding:10px 14px; border-radius:8px; font-size:13px; font-weight:500; text-align:right; }
+  .heat-table td:first-child { text-align:left; color:var(--text); font-weight:600; background:transparent !important; min-width:170px; }
+  .heat-table tr.parent-row td { font-weight:700; font-size:13px; }
+  .heat-table tr.child-row td:first-child { padding-left:28px; font-weight:400; font-size:12px; color:var(--muted); }
+  .heat-table tr.child-row td { font-size:12px; }
+  .heat-table tr.gap-row td { padding:2px; background:transparent !important; }
+
+  .section-title { padding:8px 48px 0; font-size:11px; text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin-top:12px; }
+
+  @media(max-width:900px) {
+    .grid-2 { grid-template-columns:1fr; }
+    .kpi-strip { grid-template-columns:1fr 1fr; }
+    .header,.kpi-strip,.grid,.section-title { padding-left:20px; padding-right:20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Consolidated Revenue Dashboard</h1>
+  <p id="subtitle"></p>
+</div>
+
+<div class="kpi-strip" id="kpiStrip"></div>
+
+<p class="section-title">Revenue Overview</p>
+<div class="grid grid-2">
+  <div class="card">
+    <h3><span class="dot" style="background:#6366f1"></span>Category Revenue — Grouped Bar</h3>
+    <div class="chart-container tall"><canvas id="chartBar"></canvas></div>
+  </div>
+  <div class="card">
+    <h3><span class="dot" style="background:#f59e0b"></span>Total Revenue Share — Donut</h3>
+    <div class="chart-container tall"><canvas id="chartDonut"></canvas></div>
+  </div>
+</div>
+
+<p class="section-title">Sub-Category Deep Dives</p>
+<div id="stackedChartsGrid" class="grid grid-2"></div>
+
+<p class="section-title">Trends &amp; Performance</p>
+<div class="grid grid-2">
+  <div class="card">
+    <h3><span class="dot" style="background:#ec4899"></span>Revenue Trend — Area Line</h3>
+    <div class="chart-container tall"><canvas id="chartLine"></canvas></div>
+  </div>
+  <div class="card">
+    <h3><span class="dot" style="background:#8b5cf6"></span>Revenue Per Device — Radar</h3>
+    <div class="chart-container tall"><canvas id="chartRadar"></canvas></div>
+  </div>
+</div>
+
+<p class="section-title">Growth Analysis</p>
+<div class="grid grid-2">
+  <div class="card">
+    <h3><span class="dot" style="background:#ef4444"></span>Period-over-Period Revenue Growth % — Horizontal Bar</h3>
+    <div class="chart-container tall"><canvas id="chartGrowth"></canvas></div>
+  </div>
+  <div class="card">
+    <h3><span class="dot" style="background:#14b8a6"></span>Devices vs Revenue — Bubble Chart</h3>
+    <div class="chart-container tall"><canvas id="chartBubble"></canvas></div>
+  </div>
+</div>
+
+<p class="section-title">Detailed Revenue Heatmap</p>
+<div class="grid grid-full">
+  <div class="card">
+    <h3><span class="dot" style="background:#10b981"></span>Revenue Heatmap — All Categories &times; Periods (with Sub-Segments)</h3>
+    <table class="heat-table" id="heatmap"></table>
+  </div>
+</div>
+
+<div style="height:40px"></div>
+
+<script>
+// ============ INJECTED DATA ============
+const D = {"sheetNames": ["Jan 2026", "Feb 2026", "Mar 2026"], "shortLabels": ["Jan", "Feb", "Mar"], "numMonths": 3, "categories": ["NON AIS", "AIS Mining", "AIS Passing", "RDB Passing", "Fuel Sensor", "Indus"], "rev": {"NON AIS": [70499388.316476, 67496128.0693179, 80274430.548254], "AIS Mining": [22675499.9408242, 24004479.7571053, 24719771.8636991], "AIS Passing": [15675467.9587975, 14190847.7549278, 16573446.3808815], "RDB Passing": [2151804.07448339, 2170136.42312517, 3864476.67361171], "Fuel Sensor": [16747609.065972451, 14045851.5552704, 12242191.2486707], "Indus": [1200902.7165080141, 1122112.8395634985, 1335107.2672393816]}, "units": {"NON AIS": [384702.0, 394094.0, 406871.0], "AIS Mining": [74093.0, 78084.0, 66610.0], "AIS Passing": [29172.0, 29041.0, 31000.0], "RDB Passing": [2765.0, 2764.0, 2764.0], "Fuel Sensor": [27417.0, 8054.0, 25982.0], "Indus": [258.0, 283.0, 287.0]}, "rpd": {"NON AIS": [183.257140114884, 171.269108561201, 197.297007032337], "AIS Mining": [306.041055711392, 307.418674211173, 371.112023175185], "AIS Passing": [537.34635811043, 488.64872955228, 534.627302609081], "RDB Passing": [778.229321693812, 785.143423706647, 1398.1464086873], "Fuel Sensor": [610.847615201242, 1743.95971632362, 471.179710902574], "Indus": [4654.661691891528, 3965.06303732685, 4651.941697698194]}, "structure": [{"label": "NON AIS", "children": [{"label": "Fresh - Monthly", "rev": [2637699.07094461, 3346954.16382238, 4496449.2995356]}, {"label": "Fresh - Others", "rev": [26700108.7514755, 25668565.5652684, 31888544.3861324]}, {"label": "Renewal - Monthly", "rev": [10210168.4724832, 9319378.92558054, 12338239.142881]}, {"label": "Renewal - Others", "rev": [30951412.0215727, 29161229.4146466, 31551197.719705]}, {"label": "Distributor", "rev": [4493751.65183476, 4109849.34618644, 4644233.94809623]}]}, {"label": "AIS Mining", "children": [{"label": "Fresh", "rev": [16396048.7857236, 17818867.5992716, 18871503.1075512]}, {"label": "Renewal", "rev": [6279451.15510058, 6185612.15783367, 5848268.75614784]}]}, {"label": "AIS Passing", "children": [{"label": "Fresh", "rev": [14912366.6288045, 13429941.7433766, 15682378.2528353]}, {"label": "Renewal", "rev": [763101.329992975, 760906.011551114, 891068.128046244]}]}, {"label": "RDB Passing", "children": []}, {"label": "Fuel Sensor", "children": [{"label": "Fresh - Monthly", "rev": [4998417.349493244, 2405592.837231731, 4321709.28774725]}, {"label": "Fresh - Others", "rev": [11749191.716479208, 11718362.107869115, 7920481.96092344]}]}, {"label": "Indus", "children": []}]};
+
+const monthColors = ["#6366f1", "#f59e0b", "#10b981"];
+const catColors = ["#6366f1", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899"];
+
+// ============ HELPERS ============
+const fmt = v => {
+  if(v >= 1e7) return '\u20B9' + (v/1e7).toFixed(2) + ' Cr';
+  if(v >= 1e5) return '\u20B9' + (v/1e5).toFixed(2) + ' L';
+  if(v === 0) return '\u20B90';
+  return '\u20B9' + v.toLocaleString('en-IN');
+};
+const fmtS = v => {
+  if(v >= 1e7) return (v/1e7).toFixed(1) + 'Cr';
+  if(v >= 1e5) return (v/1e5).toFixed(1) + 'L';
+  if(v === 0) return '0';
+  return v.toLocaleString('en-IN');
+};
+const pctCh = (curr,prev) => prev===0 ? null : ((curr-prev)/prev*100);
+
+Chart.defaults.color = '#8b8fa3';
+Chart.defaults.borderColor = '#2a2d42';
+Chart.defaults.font.family = "'Segoe UI',system-ui,sans-serif";
+
+// ============ SUBTITLE ============
+document.getElementById('subtitle').innerHTML =
+  D.sheetNames.join(' &bull; ') + ' &nbsp;|&nbsp; All figures in INR (Revenue w/o GST)';
+
+// ============ KPIs ============
+(function() {
+  const strip = document.getElementById('kpiStrip');
+  const totalPerMonth = D.shortLabels.map((_,mi) => D.categories.reduce((s,c) => s + D.rev[c][mi], 0));
+  const unitsPerMonth = D.shortLabels.map((_,mi) => D.categories.reduce((s,c) => s + D.units[c][mi], 0));
+  const grandTotal = totalPerMonth.reduce((a,b) => a+b, 0);
+  const lastIdx = D.numMonths - 1;
+  const prevIdx = D.numMonths >= 2 ? lastIdx - 1 : null;
+
+  const kpis = [
+    { label:'Total Revenue (All Periods)', value: fmt(grandTotal) },
+    { label: D.shortLabels[lastIdx] + ' Revenue', value: fmt(totalPerMonth[lastIdx]),
+       change: prevIdx !== null ? pctCh(totalPerMonth[lastIdx], totalPerMonth[prevIdx]) : null,
+       vs: prevIdx !== null ? 'vs ' + D.shortLabels[prevIdx] : '' },
+    { label: D.shortLabels[lastIdx] + ' Devices', value: unitsPerMonth[lastIdx].toLocaleString('en-IN'),
+       change: prevIdx !== null ? pctCh(unitsPerMonth[lastIdx], unitsPerMonth[prevIdx]) : null,
+       vs: prevIdx !== null ? 'vs ' + D.shortLabels[prevIdx] : '' },
+    { label:'Active Categories', value: String(D.categories.filter(c => D.rev[c][lastIdx] > 0).length) + ' / ' + D.categories.length },
+    { label:'Periods Compared', value: String(D.numMonths), sub: D.sheetNames[0] + ' to ' + D.sheetNames[lastIdx] },
+  ];
+
+  kpis.forEach((k,i) => {
+    let changeHtml = '';
+    if(k.change !== null && k.change !== undefined) {
+      const cls = k.change >= 0 ? 'up' : 'down';
+      const arrow = k.change >= 0 ? '\u25B2' : '\u25BC';
+      changeHtml = `<div class="change ${cls}">${arrow} ${Math.abs(k.change).toFixed(1)}% ${k.vs||''}</div>`;
+    }
+    if(k.sub) changeHtml = `<div class="sub">${k.sub}</div>`;
+    strip.innerHTML += `<div class="kpi" style="--accent:${catColors[i%catColors.length]}">
+      <div class="label">${k.label}</div><div class="value">${k.value}</div>${changeHtml}</div>`;
+  });
+})();
+
+// ============ CHART 1: Grouped Bar ============
+new Chart(document.getElementById('chartBar'), {
+  type:'bar',
+  data:{
+    labels: D.categories,
+    datasets: D.shortLabels.map((lbl,mi) => ({
+      label:lbl, data:D.categories.map(c=>D.rev[c][mi]),
+      backgroundColor:monthColors[mi]+'cc', borderRadius:4
+    }))
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{position:'bottom', labels:{usePointStyle:true, padding:16}} },
+    scales:{
+      y:{ ticks:{ callback: v => fmtS(v) }, grid:{color:'#2a2d4260'} },
+      x:{ grid:{display:false} }
+    }
+  }
+});
+
+// ============ CHART 2: Donut ============
+const totals = D.categories.map(c => D.rev[c].reduce((a,b)=>a+b,0));
+const grandSum = totals.reduce((a,b)=>a+b,0);
+new Chart(document.getElementById('chartDonut'), {
+  type:'doughnut',
+  data:{
+    labels: D.categories,
+    datasets:[{ data:totals, backgroundColor:catColors.slice(0,D.categories.length), borderWidth:0, hoverOffset:12 }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false, cutout:'55%',
+    plugins:{
+      legend:{position:'right', labels:{usePointStyle:true, padding:14, font:{size:12}}},
+      tooltip:{ callbacks:{ label: ctx => `${ctx.label}: ${fmt(ctx.raw)} (${(ctx.raw/grandSum*100).toFixed(1)}%)` }}
+    }
+  }
+});
+
+// ============ DYNAMIC STACKED BAR CHARTS (one per parent with children) ============
+(function() {
+  const grid = document.getElementById('stackedChartsGrid');
+  const subColors = ['#6366f1','#818cf8','#f59e0b','#fbbf24','#10b981','#34d399','#ef4444','#f87171','#8b5cf6','#a78bfa'];
+
+  D.structure.forEach((cat, ci) => {
+    if(cat.children.length === 0) return;
+
+    const cardId = 'stackedChart_' + ci;
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<h3><span class="dot" style="background:${catColors[ci%catColors.length]}"></span>${cat.label} — Stacked Breakdown</h3>
+      <div class="chart-container medium"><canvas id="${cardId}"></canvas></div>`;
+    grid.appendChild(card);
+
+    new Chart(document.getElementById(cardId), {
+      type:'bar',
+      data:{
+        labels: D.shortLabels,
+        datasets: cat.children.map((ch,si) => ({
+          label: ch.label, data: ch.rev,
+          backgroundColor: subColors[si % subColors.length] + 'cc', borderRadius:2
+        }))
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{position:'bottom', labels:{usePointStyle:true, padding:12, font:{size:11}}} },
+        scales:{
+          x:{ stacked:true, grid:{display:false} },
+          y:{ stacked:true, ticks:{ callback: v => fmtS(v) }, grid:{color:'#2a2d4260'} }
+        }
+      }
+    });
+  });
+})();
+
+// ============ CHART: Area Line ============
+new Chart(document.getElementById('chartLine'), {
+  type:'line',
+  data:{
+    labels: D.shortLabels,
+    datasets: D.categories.map((c,i) => ({
+      label:c, data:D.rev[c], borderColor:catColors[i%catColors.length],
+      backgroundColor:catColors[i%catColors.length]+'18',
+      fill:true, tension:0.4, pointRadius:5, pointHoverRadius:8, borderWidth:2.5
+    }))
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{position:'bottom', labels:{usePointStyle:true, padding:12, font:{size:11}}} },
+    scales:{
+      y:{ ticks:{ callback: v => fmtS(v) }, grid:{color:'#2a2d4260'} },
+      x:{ grid:{display:false} }
+    },
+    interaction:{ mode:'index', intersect:false }
+  }
+});
+
+// ============ CHART: Radar (RPD) ============
+const radarCats = D.categories.filter(c => D.rpd[c] && D.rpd[c].some(v => v > 0));
+new Chart(document.getElementById('chartRadar'), {
+  type:'radar',
+  data:{
+    labels: radarCats,
+    datasets: D.shortLabels.map((lbl,mi) => ({
+      label:lbl, data:radarCats.map(c => D.rpd[c][mi]),
+      borderColor:monthColors[mi], backgroundColor:monthColors[mi]+'25',
+      pointBackgroundColor:monthColors[mi], borderWidth:2
+    }))
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{position:'bottom', labels:{usePointStyle:true, padding:14}} },
+    scales:{
+      r:{ ticks:{backdropColor:'transparent', color:'#8b8fa3'},
+           grid:{color:'#2a2d4260'}, angleLines:{color:'#2a2d4240'},
+           pointLabels:{font:{size:11}} }
+    }
+  }
+});
+
+// ============ CHART: Horizontal Bar — Growth % ============
+(function() {
+  if(D.numMonths < 2) return;
+  const datasets = [];
+  for(let mi = 1; mi < D.numMonths; mi++) {
+    const label = D.shortLabels[mi-1] + '\u2192' + D.shortLabels[mi] + ' %';
+    const data = D.categories.map(c => D.rev[c][mi-1] === 0 ? null : pctCh(D.rev[c][mi], D.rev[c][mi-1]));
+    datasets.push({
+      label, data,
+      backgroundColor: data.map(v => v !== null && v >= 0 ? monthColors[mi] + 'aa' : '#ef4444aa'),
+      borderRadius: 4
+    });
+  }
+  new Chart(document.getElementById('chartGrowth'), {
+    type:'bar',
+    data:{ labels: D.categories, datasets },
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom', labels:{usePointStyle:true, padding:14}},
+        tooltip:{ callbacks:{ label: ctx => `${ctx.dataset.label}: ${ctx.raw!==null?ctx.raw.toFixed(1)+'%':'N/A'}` }}
+      },
+      scales:{
+        x:{ ticks:{ callback: v => v + '%' }, grid:{color:'#2a2d4260'} },
+        y:{ grid:{display:false} }
+      }
+    }
+  });
+})();
+
+// ============ CHART: Bubble ============
+(function() {
+  const lastIdx = D.numMonths - 1;
+  const datasets = D.categories.map((c,i) => ({
+    label: c,
+    data:[{ x: D.units[c][lastIdx], y: D.rev[c][lastIdx],
+             r: Math.max(4, Math.sqrt(D.rev[c][lastIdx]/200000)) }],
+    backgroundColor: catColors[i%catColors.length] + '99',
+    borderColor: catColors[i%catColors.length], borderWidth:1.5
+  }));
+  new Chart(document.getElementById('chartBubble'), {
+    type:'bubble',
+    data:{ datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom', labels:{usePointStyle:true, padding:12, font:{size:11}}} },
+      scales:{
+        x:{ title:{display:true, text:'Unique Devices (' + D.shortLabels[lastIdx] + ')'},
+             ticks:{ callback: v => v>=1000?(v/1000).toFixed(0)+'K':v }, grid:{color:'#2a2d4260'} },
+        y:{ title:{display:true, text:'Revenue (' + D.shortLabels[lastIdx] + ')'},
+             ticks:{ callback: v => fmtS(v) }, grid:{color:'#2a2d4260'} }
+      }
+    }
+  });
+})();
+
+// ============ HEATMAP ============
+(function() {
+  const tbl = document.getElementById('heatmap');
+  const allVals = [];
+  D.categories.forEach(c => D.rev[c].forEach(v => allVals.push(v)));
+  D.structure.forEach(cat => cat.children.forEach(ch => ch.rev.forEach(v => allVals.push(v))));
+  const maxV = Math.max(...allVals);
+
+  const colorScale = (v, isParent) => {
+    if(v === 0) return 'rgba(42,45,66,0.6)';
+    const intensity = Math.pow(v / maxV, 0.6);
+    if(isParent) {
+      return `rgba(${Math.round(30+intensity*69)},${Math.round(40+intensity*62)},${Math.round(80+intensity*161)},0.9)`;
+    } else {
+      return `rgba(${Math.round(25+intensity*45)},${Math.round(50+intensity*80)},${Math.round(60+intensity*100)},0.7)`;
+    }
+  };
+
+  // Build MoM header columns dynamically
+  let momHeaders = '';
+  for(let mi = 1; mi < D.numMonths; mi++) {
+    momHeaders += `<th>${D.shortLabels[mi]} vs ${D.shortLabels[mi-1]}</th>`;
+  }
+
+  let html = `<tr><th class="row-label">Category / Sub-Segment</th>`;
+  D.shortLabels.forEach(l => { html += `<th>${l}</th>`; });
+  html += `<th>Total</th>${momHeaders}</tr>`;
+
+  D.structure.forEach(cat => {
+    const d = D.rev[cat.label];
+    const total = d.reduce((a,b) => a+b, 0);
+
+    // MoM cells for parent
+    let momCells = '';
+    for(let mi = 1; mi < D.numMonths; mi++) {
+      const prev = d[mi-1], curr = d[mi];
+      const val = prev === 0 ? '\u2014' : ((curr-prev)/prev*100).toFixed(1) + '%';
+      const col = prev === 0 ? 'var(--muted)' : (curr >= prev ? '#10b981' : '#ef4444');
+      momCells += `<td style="background:transparent;color:${col};font-weight:600;text-align:center">${val}</td>`;
+    }
+
+    html += `<tr class="parent-row"><td class="row-label">${cat.label}</td>`;
+    d.forEach(v => { html += `<td style="background:${colorScale(v,true)};color:#fff">${fmtS(v)}</td>`; });
+    html += `<td style="background:${colorScale(total,true)};color:#fff;font-weight:700">${fmtS(total)}</td>${momCells}</tr>`;
+
+    cat.children.forEach(ch => {
+      const sd = ch.rev;
+      const stotal = sd.reduce((a,b) => a+b, 0);
+
+      let sMom = '';
+      for(let mi = 1; mi < D.numMonths; mi++) {
+        const prev = sd[mi-1], curr = sd[mi];
+        const val = prev === 0 ? '\u2014' : ((curr-prev)/prev*100).toFixed(1) + '%';
+        const col = prev === 0 ? 'var(--muted)' : (curr >= prev ? '#10b981' : '#ef4444');
+        sMom += `<td style="background:transparent;color:${col};text-align:center;font-size:12px">${val}</td>`;
+      }
+
+      html += `<tr class="child-row"><td class="row-label">${ch.label}</td>`;
+      sd.forEach(v => { html += `<td style="background:${colorScale(v,false)};color:#c8cbda">${fmtS(v)}</td>`; });
+      html += `<td style="background:${colorScale(stotal,false)};color:#e2e4ed">${fmtS(stotal)}</td>${sMom}</tr>`;
+    });
+
+    html += '<tr class="gap-row"><td colspan="' + (D.numMonths + 2 + (D.numMonths - 1)) + '"></td></tr>';
+  });
+
+  // Grand total row
+  const grandPerMonth = D.shortLabels.map((_,mi) => D.categories.reduce((s,c) => s + D.rev[c][mi], 0));
+  const grandTotal = grandPerMonth.reduce((a,b) => a+b, 0);
+  html += `<tr class="parent-row"><td class="row-label" style="color:#a5b4fc">GRAND TOTAL</td>`;
+  grandPerMonth.forEach(v => { html += `<td style="background:#4338ca;color:#fff;font-weight:700">${fmtS(v)}</td>`; });
+  html += `<td style="background:#6366f1;color:#fff;font-weight:800">${fmtS(grandTotal)}</td>`;
+  html += `<td colspan="${D.numMonths - 1}"></td></tr>`;
+
+  tbl.innerHTML = html;
+})();
+</script>
+</body>
+</html>
