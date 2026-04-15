@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consolidated Revenue Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<style>
+  :root{--bg:#0f1117;--card:#1a1d2e;--border:#2a2d42;--text:#e2e4ed;--muted:#8b8fa3;--accent:#6366f1;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);}
+  .hdr{background:linear-gradient(135deg,#1e1b4b,#312e81,#4338ca);padding:28px 48px 20px;border-bottom:3px solid var(--accent);}
+  .hdr h1{font-size:28px;font-weight:700;}
+  .hdr p{color:#a5b4fc;margin-top:4px;font-size:14px;}
+
+  .global-filter{padding:16px 48px;background:#12141f;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .global-filter .gf-label{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-weight:600;}
+  .filter-btn{padding:8px 22px;border-radius:22px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;font-family:inherit;}
+  .filter-btn:hover{border-color:#6366f1;color:var(--text);}
+  .filter-btn.active{background:#6366f1;border-color:#6366f1;color:#fff;font-weight:600;box-shadow:0 0 12px #6366f140;}
+
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:24px 48px;}
+  .kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;position:relative;overflow:hidden;transition:all .3s;}
+  .kpi .lbl{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;}
+  .kpi .val{font-size:22px;font-weight:700;}
+  .kpi .ch{font-size:11px;margin-top:4px;}
+  .kpi .ch.up{color:#10b981;} .kpi .ch.dn{color:#ef4444;}
+
+  .grid{display:grid;gap:20px;padding:0 48px 28px;}
+  .g1{grid-template-columns:1fr;} .g2{grid-template-columns:1fr 1fr;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;}
+  .card h3{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .card h3 .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+  .cc{position:relative;width:100%;} .cc.t{height:380px;} .cc.m{height:320px;}
+
+  .ht{width:100%;border-collapse:separate;border-spacing:4px;}
+  .ht th{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:8px 12px;text-align:left;}
+  .ht td{padding:10px 14px;border-radius:8px;font-size:13px;font-weight:500;text-align:right;transition:all .3s;}
+  .ht td:first-child{text-align:left;color:var(--text);font-weight:600;background:transparent!important;min-width:170px;}
+  .ht tr.pr td{font-weight:700;} .ht tr.cr td:first-child{padding-left:28px;font-weight:400;font-size:12px;color:var(--muted);}
+  .ht tr.cr td{font-size:12px;} .ht tr.gr td{padding:2px;background:transparent!important;}
+  .ht td.hl{outline:2px solid #6366f1;outline-offset:-2px;}
+
+  .stitle{padding:8px 48px 0;font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-top:12px;}
+
+  @media(max-width:900px){
+    .g2{grid-template-columns:1fr;}
+    .kpi-grid{grid-template-columns:1fr 1fr;}
+    .hdr,.global-filter,.kpi-grid,.grid,.stitle{padding-left:20px;padding-right:20px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>Consolidated Revenue Dashboard</h1>
+  <p id="sub"></p>
+</div>
+
+<div class="global-filter" id="globalFilter">
+  <span class="gf-label">Filter by Period:</span>
+</div>
+
+<div class="kpi-grid" id="kpiStrip"></div>
+
+<p class="stitle">Month-on-Month Totals</p>
+<div class="grid g2">
+  <div class="card"><h3><span class="dot" style="background:#6366f1"></span>Total Revenue — Month on Month</h3><div class="cc m"><canvas id="cMomRev"></canvas></div></div>
+  <div class="card"><h3><span class="dot" style="background:#10b981"></span>Total Devices — Month on Month</h3><div class="cc m"><canvas id="cMomDev"></canvas></div></div>
+</div>
+
+<p class="stitle">Revenue Distribution</p>
+<div class="grid g1">
+  <div class="card"><h3><span class="dot" style="background:#f59e0b"></span>Revenue Breakdown — Donut</h3><div class="cc t"><canvas id="cDonut"></canvas></div></div>
+</div>
+
+<p class="stitle">Sub-Category Stacked Breakdowns</p>
+<div id="stackedGrid" class="grid g2"></div>
+
+<p class="stitle">Performance Metrics</p>
+<div class="grid g2">
+  <div class="card"><h3><span class="dot" style="background:#8b5cf6"></span>Revenue Per Device — Line Trend</h3><div class="cc t"><canvas id="cRpd"></canvas></div></div>
+  <div class="card"><h3><span class="dot" style="background:#ef4444"></span>Revenue Waterfall — Absolute &amp; % Movement</h3><div class="cc t"><canvas id="cWaterfall"></canvas></div></div>
+</div>
+
+<p class="stitle">Device &amp; Revenue Analysis</p>
+<div class="grid g1">
+  <div class="card"><h3><span class="dot" style="background:#14b8a6"></span>Devices vs Revenue — Bubble</h3><div class="cc t"><canvas id="cBubble"></canvas></div></div>
+</div>
+
+<p class="stitle">Detailed Revenue Heatmap</p>
+<div class="grid g1">
+  <div class="card"><h3><span class="dot" style="background:#10b981"></span>Revenue Heatmap — All Categories &times; Periods</h3><table class="ht" id="heatmap"></table></div>
+</div>
+<div style="height:40px"></div>
+
+<script>
+Chart.register(ChartDataLabels);
+Chart.defaults.color='#8b8fa3';
+Chart.defaults.borderColor='#2a2d42';
+Chart.defaults.font.family="'Segoe UI',system-ui,sans-serif";
+Chart.defaults.plugins.datalabels={display:false};
+
+const D={"sheetNames": ["Jan 2026", "Feb 2026", "Mar 2026"], "shortLabels": ["Jan", "Feb", "Mar"], "numMonths": 3, "categories": ["NON AIS", "Distributor", "AIS Mining", "AIS Passing", "RDB Passing", "Fuel Sensor", "Indus"], "rev": {"NON AIS": [70499390.0, 67496130.0, 80452386.0], "Distributor": [4493752.0, 4109849.0, 4644234.0], "AIS Mining": [22675500.0, 24004480.0, 24820156.0], "AIS Passing": [15675470.0, 14190850.0, 16596150.0], "RDB Passing": [2151804.0, 2170136.0, 3864477.0], "Fuel Sensor": [16747609.065972451, 14045850.0, 12085933.0], "Indus": [1200902.7165080141, 1122112.8395634985, 1335107.0]}, "units": {"NON AIS": [384702.0, 394094.0, 401664.0], "Distributor": [34872.0, 21291.0, 36368.0], "AIS Mining": [74093.0, 78084.0, 66784.0], "AIS Passing": [29172.0, 29041.0, 31082.0], "RDB Passing": [2765.0, 2764.0, 2763.0], "Fuel Sensor": [27417.0, 8054.0, 25998.0], "Indus": [258.0, 283.0, 287.0]}, "rpd": {"NON AIS": [183.25714, 171.269109, 200.0], "Distributor": [128.864179, 193.032236, 128.0], "AIS Mining": [306.041056, 307.418674, 372.0], "AIS Passing": [537.346358, 488.64873, 534.0], "RDB Passing": [778.229294755877, 785.143424, 1399.0], "Fuel Sensor": [610.847615201242, 1743.959716, 465.0], "Indus": [4654.661691891528, 3965.06303732685, 4651.941698]}, "structure": [{"label": "NON AIS", "children": [{"label": "Fresh - Monthly", "rev": [2637699.0, 3346954.0, 4496449.0]}, {"label": "Renewal - Monthly", "rev": [10210170.0, 9319379.0, 12344679.0]}, {"label": "Fresh - Non-Monthly", "rev": [26700110.0, 25668570.0, 31872520.0]}, {"label": "Renewal - Non-Monthly", "rev": [30951410.0, 29161230.0, 31738737.0]}]}, {"label": "Distributor", "children": []}, {"label": "AIS Mining", "children": [{"label": "Fresh", "rev": [16396050.0, 17818870.0, 18882573.0]}, {"label": "Renewal", "rev": [6279451.0, 6185612.0, 5937583.0]}]}, {"label": "AIS Passing", "children": [{"label": "Fresh", "rev": [14912370.0, 13429940.0, 15687332.0]}, {"label": "Renewal", "rev": [763101.0, 760906.0, 908818.0]}]}, {"label": "RDB Passing", "children": []}, {"label": "Fuel Sensor", "children": [{"label": "Monthly", "rev": [4998417.349493244, 2366541.0, 4243581.0]}, {"label": "Non-Monthly", "rev": [11749191.716479208, 11679310.0, 7842352.0]}]}, {"label": "Indus", "children": []}]};
+const MC=["#6366f1", "#f59e0b", "#10b981"];
+const CC=["#6366f1", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6"];
+
+const fmt=v=>{if(v>=1e7)return'\u20B9'+(v/1e7).toFixed(2)+' Cr';if(v>=1e5)return'\u20B9'+(v/1e5).toFixed(2)+' L';if(v===0)return'\u20B90';return'\u20B9'+v.toLocaleString('en-IN');};
+const fS=v=>{if(v>=1e7)return(v/1e7).toFixed(1)+'Cr';if(v>=1e5)return(v/1e5).toFixed(1)+'L';if(v===0)return'0';return v.toLocaleString('en-IN');};
+const pct=(a,b)=>b===0?null:((a-b)/b*100);
+
+document.getElementById('sub').innerHTML=D.sheetNames.join(' \u2022 ')+' | All figures in INR (Revenue w/o GST)';
+
+// ========================================================================
+// GLOBAL FILTER STATE
+// ========================================================================
+let GF=new Set(D.shortLabels.map((_,i)=>i));
+const fm=()=>[...GF].sort((a,b)=>a-b);
+const isAll=()=>GF.size===D.numMonths;
+
+const charts={};
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+// ========================================================================
+// BUILD GLOBAL FILTER BAR
+// ========================================================================
+function buildGlobalFilter(){
+  const bar=document.getElementById('globalFilter');
+  bar.querySelectorAll('.filter-btn').forEach(b=>b.remove());
+
+  const allBtn=document.createElement('button');
+  allBtn.className='filter-btn'+(isAll()?' active':'');
+  allBtn.textContent='All Months';
+  allBtn.onclick=()=>{D.shortLabels.forEach((_,i)=>GF.add(i));renderAll();};
+  bar.appendChild(allBtn);
+
+  D.shortLabels.forEach((lbl,mi)=>{
+    const btn=document.createElement('button');
+    const sel=GF.has(mi);
+    btn.className='filter-btn'+(sel?' active':'');
+    btn.textContent=D.sheetNames[mi];
+    if(sel){btn.style.background=MC[mi%MC.length];btn.style.borderColor=MC[mi%MC.length];btn.style.color='#fff';btn.style.boxShadow='0 0 12px '+MC[mi%MC.length]+'40';}
+    btn.onclick=()=>{
+      if(GF.has(mi)){if(GF.size>1)GF.delete(mi);}else{GF.add(mi);}
+      renderAll();
+    };
+    bar.appendChild(btn);
+  });
+}
+
+// ========================================================================
+// RENDER ALL
+// ========================================================================
+function renderAll(){
+  buildGlobalFilter();
+  renderKPIs();
+  renderMomRev();
+  renderMomDev();
+  renderDonut();
+  renderStacked();
+  renderRPD();
+  renderWaterfall();
+  renderBubble();
+  renderHeatmap();
+}
+
+// ========================================================================
+// KPIs
+// ========================================================================
+function renderKPIs(){
+  const s=document.getElementById('kpiStrip');
+  s.innerHTML='';
+  const months=fm();
+  months.forEach(mi=>{
+    const lbl=D.shortLabels[mi];
+    const r=D.categories.reduce((a,c)=>a+D.rev[c][mi],0);
+    const u=D.categories.reduce((a,c)=>a+D.units[c][mi],0);
+    const prevR=mi>0?D.categories.reduce((a,c)=>a+D.rev[c][mi-1],0):null;
+    const rCh=prevR!==null?pct(r,prevR):null;
+    const rChH=rCh!==null?`<span class="ch ${rCh>=0?'up':'dn'}">${rCh>=0?'\u25B2':'\u25BC'}${Math.abs(rCh).toFixed(1)}%</span>`:'';
+    s.innerHTML+=`<div class="kpi"><div style="position:absolute;top:0;left:0;width:4px;height:100%;background:${MC[mi%MC.length]}"></div><div class="lbl">${lbl} Revenue</div><div class="val">${fmt(r)}</div>${rChH}<div class="lbl" style="margin-top:10px">${lbl} Devices</div><div class="val" style="font-size:18px">${u.toLocaleString('en-IN')}</div></div>`;
+  });
+  if(months.length>1){
+    const grandRev=months.map(mi=>D.categories.reduce((a,c)=>a+D.rev[c][mi],0)).reduce((a,b)=>a+b,0);
+    s.innerHTML+=`<div class="kpi"><div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#ec4899"></div><div class="lbl">Selected Total</div><div class="val">${fmt(grandRev)}</div></div>`;
+  } else if(months.length===1){
+    const mi=months[0];
+    const sorted=[...D.categories].filter(c=>D.rev[c][mi]>0).sort((a,b)=>D.rev[b][mi]-D.rev[a][mi]);
+    if(sorted.length>0) s.innerHTML+=`<div class="kpi"><div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#f59e0b"></div><div class="lbl">Top Category</div><div class="val" style="font-size:16px">${sorted[0]}</div><div class="ch up">${fmt(D.rev[sorted[0]][mi])}</div></div>`;
+    const activeCats=D.categories.filter(c=>D.rev[c][mi]>0).length;
+    s.innerHTML+=`<div class="kpi"><div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#8b5cf6"></div><div class="lbl">Active Categories</div><div class="val">${activeCats} / ${D.categories.length}</div></div>`;
+  }
+}
+
+// ========================================================================
+// MoM REVENUE
+// ========================================================================
+function renderMomRev(){
+  destroyChart('cMomRev');
+  const months=fm();
+  const labels=months.map(mi=>D.shortLabels[mi]);
+  const totals=months.map(mi=>D.categories.reduce((s,c)=>s+D.rev[c][mi],0));
+  const bgColors=months.map(mi=>MC[mi%MC.length]+'cc');
+  charts.cMomRev=new Chart(document.getElementById('cMomRev'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Revenue',data:totals,backgroundColor:bgColors,borderRadius:6,order:2},
+      {label:'Trend',data:totals,type:'line',borderColor:'#ec4899',backgroundColor:'transparent',pointRadius:6,pointBackgroundColor:'#ec4899',borderWidth:2.5,tension:0.3,order:1,
+        datalabels:{display:true,color:'#fff',anchor:'end',align:'top',font:{weight:'bold',size:12},formatter:v=>fS(v)}}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:500},
+      plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:14}}},
+      scales:{y:{ticks:{callback:v=>fS(v)},grid:{color:'#2a2d4260'}},x:{grid:{display:false}}}}
+  });
+}
+
+// ========================================================================
+// MoM DEVICES
+// ========================================================================
+function renderMomDev(){
+  destroyChart('cMomDev');
+  const months=fm();
+  const labels=months.map(mi=>D.shortLabels[mi]);
+  const totals=months.map(mi=>D.categories.reduce((s,c)=>s+D.units[c][mi],0));
+  const bgColors=months.map(mi=>MC[mi%MC.length]+'cc');
+  charts.cMomDev=new Chart(document.getElementById('cMomDev'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Devices',data:totals,backgroundColor:bgColors,borderRadius:6,order:2},
+      {label:'Trend',data:totals,type:'line',borderColor:'#f59e0b',backgroundColor:'transparent',pointRadius:6,pointBackgroundColor:'#f59e0b',borderWidth:2.5,tension:0.3,order:1,
+        datalabels:{display:true,color:'#fff',anchor:'end',align:'top',font:{weight:'bold',size:12},formatter:v=>v>=1000?(v/1000).toFixed(1)+'K':v}}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:500},
+      plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:14}}},
+      scales:{y:{ticks:{callback:v=>v>=1000?(v/1000).toFixed(0)+'K':v},grid:{color:'#2a2d4260'}},x:{grid:{display:false}}}}
+  });
+}
+
+// ========================================================================
+// DONUT
+// ========================================================================
+function renderDonut(){
+  destroyChart('cDonut');
+  const catColors=['#2563eb','#d97706','#059669','#dc2626','#7c3aed','#db2777','#0891b2','#ea580c','#65a30d','#e11d48'];
+  const monthPal=[
+    ['#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93c5fd','#bfdbfe','#dbeafe'],
+    ['#b45309','#d97706','#f59e0b','#fbbf24','#fcd34d','#fde68a','#fef3c7'],
+    ['#047857','#059669','#10b981','#34d399','#6ee7b7','#a7f3d0','#d1fae5'],
+    ['#b91c1c','#dc2626','#ef4444','#f87171','#fca5a5','#fecaca','#fee2e2'],
+    ['#6d28d9','#7c3aed','#8b5cf6','#a78bfa','#c4b5fd','#ddd6fe','#ede9fe'],
+    ['#be185d','#db2777','#ec4899','#f472b6','#f9a8d4','#fbcfe8','#fce7f3'],
+  ];
+  const labels=[],data=[],colors=[];
+  const months=fm();
+  if(months.length>1){
+    months.forEach(mi=>{
+      const pal=monthPal[mi%monthPal.length];
+      D.categories.forEach((c,ci)=>{labels.push(D.shortLabels[mi]+' - '+c);data.push(D.rev[c][mi]);colors.push(pal[ci%pal.length]);});
+    });
+  } else {
+    const mi=months[0];
+    D.categories.forEach((c,ci)=>{labels.push(c);data.push(D.rev[c][mi]);colors.push(catColors[ci%catColors.length]);});
+  }
+  const total=data.reduce((a,b)=>a+b,0);
+  charts.cDonut=new Chart(document.getElementById('cDonut'),{
+    type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:2,borderColor:'#1a1d2e',hoverOffset:12}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'45%',animation:{animateRotate:true,duration:600},
+      plugins:{
+        legend:{position:'right',labels:{usePointStyle:true,padding:10,font:{size:11},filter:item=>data[item.index]>0}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fmt(ctx.raw)} (${(ctx.raw/total*100).toFixed(1)}%)`}},
+        datalabels:{display:ctx=>{const v=ctx.dataset.data[ctx.dataIndex];return total>0&&v/total>0.03;},color:'#fff',font:{weight:'bold',size:11},formatter:v=>(v/total*100).toFixed(1)+'%'}
+      }}
+  });
+}
+
+// ========================================================================
+// STACKED CHARTS
+// ========================================================================
+let stackedBuilt=false;
+function renderStacked(){
+  const grid=document.getElementById('stackedGrid');
+  D.structure.forEach((_,ci)=>{destroyChart('sc_'+ci);});
+  if(!stackedBuilt){
+    grid.innerHTML='';
+    D.structure.forEach((cat,ci)=>{
+      if(cat.children.length===0)return;
+      const card=document.createElement('div');card.className='card';card.id='scard_'+ci;
+      card.innerHTML=`<h3><span class="dot" style="background:${CC[ci%CC.length]}"></span>${cat.label} — Stacked Breakdown</h3><div class="cc m"><canvas id="sc_${ci}"></canvas></div>`;
+      grid.appendChild(card);
+    });
+    stackedBuilt=true;
+  }
+  const palettes=[
+    ['#2563eb','#dc2626','#059669','#d97706','#7c3aed','#db2777'],
+    ['#0891b2','#e11d48','#65a30d','#ea580c','#9333ea','#be185d'],
+    ['#0d9488','#b91c1c','#4d7c0f','#c2410c','#6d28d9','#9d174d'],
+    ['#1d4ed8','#991b1b','#15803d','#9a3412','#5b21b6','#831843'],
+  ];
+  const months=fm();
+  D.structure.forEach((cat,ci)=>{
+    if(cat.children.length===0)return;
+    const id='sc_'+ci;
+    const pal=palettes[ci%palettes.length];
+    const labels=months.map(mi=>D.shortLabels[mi]);
+    const datasets=cat.children.map((ch,si)=>({
+      label:ch.label,data:months.map(mi=>ch.rev[mi]),backgroundColor:pal[si%pal.length]+'dd',borderRadius:1,
+      datalabels:{
+        display:ctx=>{const mi=months[ctx.dataIndex];const tot=cat.children.reduce((s,c2)=>s+c2.rev[mi],0);return tot>0&&ch.rev[mi]/tot>0.05;},
+        color:'#fff',font:{size:10,weight:'bold'},
+        formatter:(v,ctx)=>{const mi=months[ctx.dataIndex];const tot=cat.children.reduce((s,c2)=>s+c2.rev[mi],0);return tot>0?((v/tot*100).toFixed(0)+'%'):'';}
+      }
+    }));
+    charts[id]=new Chart(document.getElementById(id),{
+      type:'bar',data:{labels,datasets},
+      options:{responsive:true,maintainAspectRatio:false,animation:{duration:500},
+        plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}},
+          tooltip:{callbacks:{afterBody:items=>{const mi=months[items[0].dataIndex];const tot=cat.children.reduce((s,c2)=>s+c2.rev[mi],0);return'Total: '+fS(tot);}}}},
+        scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>fS(v)},grid:{color:'#2a2d4260'}}}}
+    });
+    const chart=charts[id];
+    const origDraw=chart.draw.bind(chart);
+    chart.draw=function(){origDraw();const ctx2=chart.ctx;const meta=chart.getDatasetMeta(cat.children.length-1);
+      meta.data.forEach((bar,di)=>{const mi=months[di];const tot=cat.children.reduce((s,c2)=>s+c2.rev[mi],0);
+        if(tot>0){ctx2.save();ctx2.font='bold 11px Segoe UI';ctx2.fillStyle='#e2e4ed';ctx2.textAlign='center';ctx2.fillText(fS(tot),bar.x,bar.y-6);ctx2.restore();}});};
+    chart.draw();
+  });
+}
+
+// ========================================================================
+// RPD
+// ========================================================================
+function renderRPD(){
+  destroyChart('cRpd');
+  const months=fm();
+  const rpdCats=D.categories.filter(c=>D.rpd[c]&&months.some(mi=>D.rpd[c][mi]>0));
+  const labels=months.map(mi=>D.shortLabels[mi]);
+  const datasets=rpdCats.map((c,ci)=>{
+    const vals=months.map(mi=>D.rpd[c][mi]);
+    const col=CC[ci%CC.length];
+    return {label:c,data:vals,borderColor:col,backgroundColor:col+'20',pointBackgroundColor:col,pointBorderColor:'#1a1d2e',
+      pointRadius:6,pointHoverRadius:9,borderWidth:2.5,tension:0.3,fill:true,
+      datalabels:{display:true,color:col,anchor:'end',align:'top',font:{weight:'bold',size:10},offset:4,
+        formatter:v=>v>0?'\u20B9'+v.toFixed(0):''}};
+  });
+  charts.cRpd=new Chart(document.getElementById('cRpd'),{
+    type:'line',
+    data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:500},
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:14}},
+        tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': \u20B9'+ctx.raw.toFixed(2)}}},
+      scales:{y:{title:{display:true,text:'\u20B9 per Device'},ticks:{callback:v=>'\u20B9'+v},grid:{color:'#2a2d4260'}},x:{grid:{color:'#2a2d4220'}}}}
+  });
+}
+
+// ========================================================================
+// WATERFALL
+// ========================================================================
+function renderWaterfall(){
+  destroyChart('cWaterfall');
+  const months=fm();
+  if(months.length<2){
+    const mi=months[0];
+    const cats=D.categories.filter(c=>D.rev[c][mi]>0).sort((a,b)=>D.rev[b][mi]-D.rev[a][mi]);
+    const labels=[...cats,'Total'];
+    let running=0;const bottoms=[];const values=[];const bg=[];const bl=[];const dl=[];
+    cats.forEach(c=>{bottoms.push(running);const v=D.rev[c][mi];values.push(v);bg.push(CC[D.categories.indexOf(c)%CC.length]+'cc');bl.push(CC[D.categories.indexOf(c)%CC.length]);dl.push(fS(v));running+=v;});
+    bottoms.push(0);values.push(running);bg.push('#6366f1');bl.push('#6366f1');dl.push(fS(running));
+    charts.cWaterfall=new Chart(document.getElementById('cWaterfall'),{
+      type:'bar',data:{labels,datasets:[
+        {label:'Base',data:bottoms,backgroundColor:'transparent',borderWidth:0,stack:'w',datalabels:{display:false}},
+        {label:'Value',data:values,backgroundColor:bg,borderColor:bl,borderWidth:1,borderRadius:4,stack:'w',
+          datalabels:{display:true,color:'#e2e4ed',anchor:'end',align:'top',font:{weight:'bold',size:10},formatter:(_,ctx)=>dl[ctx.dataIndex]}}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,animation:{duration:500},plugins:{legend:{display:false}},
+        scales:{y:{stacked:true,ticks:{callback:v=>fS(v)},grid:{color:'#2a2d4260'}},x:{stacked:true,grid:{display:false}}}}
+    });
+    return;
+  }
+  const totals=months.map(mi=>D.categories.reduce((s,c)=>s+D.rev[c][mi],0));
+  const labels=[],bottoms=[],values=[],bg=[],bl=[],dl=[];
+  labels.push(D.shortLabels[months[0]]);bottoms.push(0);values.push(totals[0]);bg.push(MC[months[0]%MC.length]);bl.push(MC[months[0]%MC.length]);dl.push(fS(totals[0]));
+  for(let i=1;i<months.length;i++){
+    const delta=totals[i]-totals[i-1];const p=pct(totals[i],totals[i-1]);const isUp=delta>=0;
+    labels.push(D.shortLabels[months[i-1]]+'\u2192'+D.shortLabels[months[i]]);
+    bottoms.push(isUp?totals[i-1]:totals[i]);values.push(Math.abs(delta));
+    bg.push(isUp?'#10b981cc':'#ef4444cc');bl.push(isUp?'#10b981':'#ef4444');
+    const sign=isUp?'+':'';dl.push(sign+fS(delta)+' ('+sign+(p!==null?p.toFixed(1):'0')+'%)');
+    labels.push(D.shortLabels[months[i]]);bottoms.push(0);values.push(totals[i]);bg.push(MC[months[i]%MC.length]);bl.push(MC[months[i]%MC.length]);dl.push(fS(totals[i]));
+  }
+  charts.cWaterfall=new Chart(document.getElementById('cWaterfall'),{
+    type:'bar',data:{labels,datasets:[
+      {label:'Base',data:bottoms,backgroundColor:'transparent',borderWidth:0,stack:'w',datalabels:{display:false}},
+      {label:'Value',data:values,backgroundColor:bg,borderColor:bl,borderWidth:1,borderRadius:4,stack:'w',
+        datalabels:{display:true,color:'#e2e4ed',anchor:'end',align:'top',font:{weight:'bold',size:11},formatter:(_,ctx)=>dl[ctx.dataIndex]}}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:500},plugins:{legend:{display:false}},
+      scales:{y:{stacked:true,ticks:{callback:v=>fS(v)},grid:{color:'#2a2d4260'}},x:{stacked:true,grid:{display:false}}}}
+  });
+}
+
+// ========================================================================
+// BUBBLE
+// ========================================================================
+function renderBubble(){
+  destroyChart('cBubble');
+  const months=fm();const datasets=[];
+  months.forEach(mi=>{
+    D.categories.forEach((c,ci)=>{
+      const r=D.rev[c][mi],u=D.units[c][mi];if(r===0&&u===0)return;
+      datasets.push({label:D.shortLabels[mi]+' - '+c,data:[{x:u,y:r,r:Math.max(5,Math.sqrt(r/150000))}],
+        backgroundColor:MC[mi%MC.length]+(55+ci*25).toString(16).padStart(2,'0'),borderColor:CC[ci%CC.length],borderWidth:2});
+    });
+  });
+  charts.cBubble=new Chart(document.getElementById('cBubble'),{
+    type:'bubble',data:{datasets},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:500},
+      plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:10,font:{size:10}}}},
+      scales:{x:{title:{display:true,text:'Unique Devices'},ticks:{callback:v=>v>=1000?(v/1000).toFixed(0)+'K':v},grid:{color:'#2a2d4260'}},
+        y:{title:{display:true,text:'Revenue (w/o GST)'},ticks:{callback:v=>fS(v)},grid:{color:'#2a2d4260'}}}}
+  });
+}
+
+// ========================================================================
+// HEATMAP
+// ========================================================================
+function renderHeatmap(){
+  const tbl=document.getElementById('heatmap');
+  const months=fm();
+  const allVals=[];
+  D.categories.forEach(c=>months.forEach(mi=>allVals.push(D.rev[c][mi])));
+  D.structure.forEach(cat=>cat.children.forEach(ch=>months.forEach(mi=>allVals.push(ch.rev[mi]))));
+  const maxV=Math.max(...allVals,1);
+  const cs=(v,p)=>{if(v===0)return'rgba(42,45,66,0.6)';const i=Math.pow(v/maxV,0.6);
+    if(p)return`rgba(${Math.round(30+i*69)},${Math.round(40+i*62)},${Math.round(80+i*161)},0.9)`;
+    return`rgba(${Math.round(25+i*45)},${Math.round(50+i*80)},${Math.round(60+i*100)},0.7)`;};
+
+  const multi=months.length>1;
+  let momH='';
+  if(multi){for(let i=1;i<months.length;i++)momH+=`<th>${D.shortLabels[months[i]]} vs ${D.shortLabels[months[i-1]]}</th>`;}
+
+  let h=`<tr><th>Category / Sub-Segment</th>`;
+  months.forEach(mi=>{h+=`<th>${D.shortLabels[mi]}</th>`;});
+  h+=`<th>Total</th>${momH}</tr>`;
+
+  D.structure.forEach(cat=>{
+    const d=months.map(mi=>D.rev[cat.label][mi]);
+    const tot=d.reduce((a,b)=>a+b,0);
+    let mc='';
+    if(multi){for(let i=1;i<months.length;i++){const prev=d[i-1],curr=d[i];
+      const val=prev===0?'\u2014':((curr-prev)/prev*100).toFixed(1)+'%';const col=prev===0?'var(--muted)':(curr>=prev?'#10b981':'#ef4444');
+      mc+=`<td style="background:transparent;color:${col};font-weight:600;text-align:center">${val}</td>`;}}
+    h+=`<tr class="pr"><td>${cat.label}</td>`;
+    d.forEach(v=>{h+=`<td style="background:${cs(v,true)};color:#fff">${fS(v)}</td>`;});
+    h+=`<td style="background:${cs(tot,true)};color:#fff;font-weight:700">${fS(tot)}</td>${mc}</tr>`;
+
+    cat.children.forEach(ch=>{
+      const sd=months.map(mi=>ch.rev[mi]);const st=sd.reduce((a,b)=>a+b,0);let sm='';
+      if(multi){for(let i=1;i<months.length;i++){const prev=sd[i-1],curr=sd[i];
+        const val=prev===0?'\u2014':((curr-prev)/prev*100).toFixed(1)+'%';const col=prev===0?'var(--muted)':(curr>=prev?'#10b981':'#ef4444');
+        sm+=`<td style="background:transparent;color:${col};text-align:center;font-size:12px">${val}</td>`;}}
+      h+=`<tr class="cr"><td>${ch.label}</td>`;
+      sd.forEach(v=>{h+=`<td style="background:${cs(v,false)};color:#c8cbda">${fS(v)}</td>`;});
+      h+=`<td style="background:${cs(st,false)};color:#e2e4ed">${fS(st)}</td>${sm}</tr>`;
+    });
+    h+='<tr class="gr"><td colspan="'+(months.length+2+(multi?months.length-1:0))+'"></td></tr>';
+  });
+
+  const gpm=months.map(mi=>D.categories.reduce((s,c)=>s+D.rev[c][mi],0));const gt=gpm.reduce((a,b)=>a+b,0);
+  h+=`<tr class="pr"><td style="color:#a5b4fc">GRAND TOTAL</td>`;
+  gpm.forEach(v=>{h+=`<td style="background:#4338ca;color:#fff;font-weight:700">${fS(v)}</td>`;});
+  h+=`<td style="background:#6366f1;color:#fff;font-weight:800">${fS(gt)}</td>`;
+  if(multi)h+=`<td colspan="${months.length-1}"></td>`;
+  h+=`</tr>`;
+  tbl.innerHTML=h;
+}
+
+// ========================================================================
+// INITIAL RENDER
+// ========================================================================
+renderAll();
+</script>
+</body>
+</html>
