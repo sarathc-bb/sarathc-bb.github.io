@@ -13,27 +13,23 @@
   .hdr{background:linear-gradient(135deg,#1e1b4b,#312e81,#4338ca);padding:28px 48px 20px;border-bottom:3px solid var(--accent);}
   .hdr h1{font-size:28px;font-weight:700;}
   .hdr p{color:#a5b4fc;margin-top:4px;font-size:14px;}
-
   .global-filter{padding:16px 48px;background:#12141f;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
   .global-filter .gf-label{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-weight:600;}
   .filter-btn{padding:8px 22px;border-radius:22px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;font-family:inherit;}
   .filter-btn:hover{border-color:#6366f1;color:var(--text);}
   .filter-btn.active{background:#6366f1;border-color:#6366f1;color:#fff;font-weight:600;box-shadow:0 0 12px #6366f140;}
-
   .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:24px 48px;}
   .kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;position:relative;overflow:hidden;transition:all .3s;}
   .kpi .lbl{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;}
   .kpi .val{font-size:22px;font-weight:700;}
   .kpi .ch{font-size:11px;margin-top:4px;}
   .kpi .ch.up{color:#10b981;} .kpi .ch.dn{color:#ef4444;}
-
   .grid{display:grid;gap:20px;padding:0 48px 28px;}
   .g1{grid-template-columns:1fr;} .g2{grid-template-columns:1fr 1fr;}
   .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;}
   .card h3{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
   .card h3 .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
   .cc{position:relative;width:100%;} .cc.t{height:380px;} .cc.m{height:320px;}
-
   .ht{width:100%;border-collapse:separate;border-spacing:4px;}
   .ht th{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:8px 12px;text-align:left;}
   .ht td{padding:10px 14px;border-radius:8px;font-size:13px;font-weight:500;text-align:right;transition:all .3s;}
@@ -41,9 +37,11 @@
   .ht tr.pr td{font-weight:700;} .ht tr.cr td:first-child{padding-left:28px;font-weight:400;font-size:12px;color:var(--muted);}
   .ht tr.cr td{font-size:12px;} .ht tr.gr td{padding:2px;background:transparent!important;}
   .ht td.hl{outline:2px solid #6366f1;outline-offset:-2px;}
-
+  .rpd-filter{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+  .rpd-filter .rpd-fbtn{padding:6px 16px;border-radius:18px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;font-family:inherit;}
+  .rpd-filter .rpd-fbtn:hover{border-color:#8b5cf6;color:var(--text);}
+  .rpd-filter .rpd-fbtn.active{background:#8b5cf6;border-color:#8b5cf6;color:#fff;font-weight:600;box-shadow:0 0 10px #8b5cf640;}
   .stitle{padding:8px 48px 0;font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-top:12px;}
-
   @media(max-width:900px){
     .g2{grid-template-columns:1fr;}
     .kpi-grid{grid-template-columns:1fr 1fr;}
@@ -52,89 +50,77 @@
 </style>
 </head>
 <body>
-
 <div class="hdr">
   <h1>Consolidated Revenue Dashboard</h1>
   <p id="sub"></p>
 </div>
-
 <div class="global-filter" id="globalFilter">
   <span class="gf-label">Filter by Period:</span>
 </div>
-
 <div class="kpi-grid" id="kpiStrip"></div>
-
 <p class="stitle">Month-on-Month Totals</p>
 <div class="grid g2">
   <div class="card"><h3><span class="dot" style="background:#6366f1"></span>Total Revenue — Month on Month</h3><div class="cc m"><canvas id="cMomRev"></canvas></div></div>
   <div class="card"><h3><span class="dot" style="background:#10b981"></span>Total Devices — Month on Month</h3><div class="cc m"><canvas id="cMomDev"></canvas></div></div>
 </div>
-
 <p class="stitle">Revenue Distribution</p>
 <div class="grid g1">
   <div class="card"><h3><span class="dot" style="background:#f59e0b"></span>Revenue Breakdown — Donut</h3><div class="cc t"><canvas id="cDonut"></canvas></div></div>
 </div>
-
 <p class="stitle">Sub-Category Stacked Breakdowns</p>
 <div id="stackedGrid" class="grid g2"></div>
-
 <p class="stitle">Performance Metrics</p>
 <div class="grid g2">
-  <div class="card"><h3><span class="dot" style="background:#8b5cf6"></span>Revenue Per Device — Line Trend</h3><div class="cc t"><canvas id="cRpd"></canvas></div></div>
+  <div class="card">
+    <h3><span class="dot" style="background:#8b5cf6"></span>Revenue Per Device — Line Trend</h3>
+    <div id="rpdFilterBar" class="rpd-filter"></div>
+    <div class="cc t"><canvas id="cRpd"></canvas></div>
+  </div>
   <div class="card"><h3><span class="dot" style="background:#ef4444"></span>Revenue Waterfall — Absolute &amp; % Movement</h3><div class="cc t"><canvas id="cWaterfall"></canvas></div></div>
 </div>
-
 <p class="stitle">Device &amp; Revenue Analysis</p>
 <div class="grid g1">
-  <div class="card"><h3><span class="dot" style="background:#14b8a6"></span>Devices vs Revenue — Bubble</h3><div class="cc t"><canvas id="cBubble"></canvas></div></div>
+  <div class="card">
+    <h3><span class="dot" style="background:#14b8a6"></span>Devices vs Revenue — Bubble</h3>
+    <div id="bubbleFilterBar" class="rpd-filter"></div>
+    <div class="cc t"><canvas id="cBubble"></canvas></div>
+  </div>
 </div>
-
 <p class="stitle">Detailed Revenue Heatmap</p>
 <div class="grid g1">
-  <div class="card"><h3><span class="dot" style="background:#10b981"></span>Revenue Heatmap — All Categories &times; Periods</h3><table class="ht" id="heatmap"></table></div>
+  <div class="card">
+    <h3><span class="dot" style="background:#10b981"></span>Revenue Heatmap — All Categories &times; Periods</h3>
+    <div id="heatmapMetricBar" class="rpd-filter"></div>
+    <div style="overflow-x:auto"><table class="ht" id="heatmap"></table></div>
+  </div>
 </div>
 <div style="height:40px"></div>
-
 <script>
 Chart.register(ChartDataLabels);
 Chart.defaults.color='#8b8fa3';
 Chart.defaults.borderColor='#2a2d42';
 Chart.defaults.font.family="'Segoe UI',system-ui,sans-serif";
 Chart.defaults.plugins.datalabels={display:false};
-
-const D={"sheetNames": ["Jan 2026", "Feb 2026", "Mar 2026"], "shortLabels": ["Jan", "Feb", "Mar"], "numMonths": 3, "categories": ["NON AIS", "Distributor", "AIS Mining", "AIS Passing", "RDB Passing", "Fuel Sensor", "Indus"], "rev": {"NON AIS": [70499390.0, 67496130.0, 80452386.0], "Distributor": [4493752.0, 4109849.0, 4644234.0], "AIS Mining": [22675500.0, 24004480.0, 24820156.0], "AIS Passing": [15675470.0, 14190850.0, 16596150.0], "RDB Passing": [2151804.0, 2170136.0, 3864477.0], "Fuel Sensor": [16747609.065972451, 14045850.0, 12085933.0], "Indus": [1200902.7165080141, 1122112.8395634985, 1335107.0]}, "units": {"NON AIS": [384702.0, 394094.0, 401664.0], "Distributor": [34872.0, 21291.0, 36368.0], "AIS Mining": [74093.0, 78084.0, 66784.0], "AIS Passing": [29172.0, 29041.0, 31082.0], "RDB Passing": [2765.0, 2764.0, 2763.0], "Fuel Sensor": [27417.0, 8054.0, 25998.0], "Indus": [258.0, 283.0, 287.0]}, "rpd": {"NON AIS": [183.25714, 171.269109, 200.0], "Distributor": [128.864179, 193.032236, 128.0], "AIS Mining": [306.041056, 307.418674, 372.0], "AIS Passing": [537.346358, 488.64873, 534.0], "RDB Passing": [778.229294755877, 785.143424, 1399.0], "Fuel Sensor": [610.847615201242, 1743.959716, 465.0], "Indus": [4654.661691891528, 3965.06303732685, 4651.941698]}, "structure": [{"label": "NON AIS", "children": [{"label": "Fresh - Monthly", "rev": [2637699.0, 3346954.0, 4496449.0]}, {"label": "Renewal - Monthly", "rev": [10210170.0, 9319379.0, 12344679.0]}, {"label": "Fresh - Non-Monthly", "rev": [26700110.0, 25668570.0, 31872520.0]}, {"label": "Renewal - Non-Monthly", "rev": [30951410.0, 29161230.0, 31738737.0]}]}, {"label": "Distributor", "children": []}, {"label": "AIS Mining", "children": [{"label": "Fresh", "rev": [16396050.0, 17818870.0, 18882573.0]}, {"label": "Renewal", "rev": [6279451.0, 6185612.0, 5937583.0]}]}, {"label": "AIS Passing", "children": [{"label": "Fresh", "rev": [14912370.0, 13429940.0, 15687332.0]}, {"label": "Renewal", "rev": [763101.0, 760906.0, 908818.0]}]}, {"label": "RDB Passing", "children": []}, {"label": "Fuel Sensor", "children": [{"label": "Monthly", "rev": [4998417.349493244, 2366541.0, 4243581.0]}, {"label": "Non-Monthly", "rev": [11749191.716479208, 11679310.0, 7842352.0]}]}, {"label": "Indus", "children": []}]};
+const D={"sheetNames": ["Jan 2026", "Feb 2026", "Mar 2026"], "shortLabels": ["Jan", "Feb", "Mar"], "numMonths": 3, "categories": ["NON AIS", "Distributor", "AIS Mining", "AIS Passing", "RDB Passing", "Fuel Sensor", "Indus"], "rev": {"NON AIS": [70499390.0, 67496130.0, 80452386.0], "Distributor": [4493752.0, 4109849.0, 4644234.0], "AIS Mining": [22675500.0, 24004480.0, 24820156.0], "AIS Passing": [15675470.0, 14190850.0, 16596150.0], "RDB Passing": [2151804.0, 2170136.0, 3864477.0], "Fuel Sensor": [16747609.065972451, 14045850.0, 12085933.0], "Indus": [1200902.7165080141, 1122112.8395634985, 1335107.0]}, "units": {"NON AIS": [384702.0, 394094.0, 401664.0], "Distributor": [34872.0, 21291.0, 36368.0], "AIS Mining": [74093.0, 78084.0, 66784.0], "AIS Passing": [29172.0, 29041.0, 31082.0], "RDB Passing": [2765.0, 2764.0, 2763.0], "Fuel Sensor": [27417.0, 8054.0, 25998.0], "Indus": [258.0, 283.0, 287.0]}, "rpd": {"NON AIS": [183.25714, 171.269109, 200.0], "Distributor": [128.864179, 193.032236, 128.0], "AIS Mining": [306.041056, 307.418674, 372.0], "AIS Passing": [537.346358, 488.64873, 534.0], "RDB Passing": [778.229294755877, 785.143424, 1399.0], "Fuel Sensor": [610.847615201242, 1743.959716, 465.0], "Indus": [4654.661691891528, 3965.06303732685, 4651.941698]}, "structure": [{"label": "NON AIS", "children": [{"label": "Fresh - Monthly", "rev": [2637699.0, 3346954.0, 4496449.0], "units": [5853.0, 6803.0, 7429.0], "rpd": [450.657624, 491.982091, 605.0]}, {"label": "Renewal - Monthly", "rev": [10210170.0, 9319379.0, 12344679.0], "units": [39015.0, 39405.0, 42915.0], "rpd": [261.698538, 236.502447, 288.0]}, {"label": "Fresh - Non-Monthly", "rev": [26700110.0, 25668570.0, 31872520.0], "units": [129447.0, 129925.0, 142296.0], "rpd": [206.262862, 197.564484, 224.0]}, {"label": "Renewal - Non-Monthly", "rev": [30951410.0, 29161230.0, 31738737.0], "units": [210387.0, 217961.0, 209024.0], "rpd": [147.116561, 133.791043, 152.0]}]}, {"label": "Distributor", "children": []}, {"label": "AIS Mining", "children": [{"label": "Fresh", "rev": [16396050.0, 17818870.0, 18882573.0], "units": [46390.0, 49786.0, 42670.0], "rpd": [353.439293, 357.909203, 443.0]}, {"label": "Renewal", "rev": [6279451.0, 6185612.0, 5937583.0], "units": [27703.0, 28298.0, 24114.0], "rpd": [226.670438, 218.588316, 246.0]}]}, {"label": "AIS Passing", "children": [{"label": "Fresh", "rev": [14912370.0, 13429940.0, 15687332.0], "units": [26199.0, 25766.0, 27516.0], "rpd": [569.196024, 521.227266, 570.0]}, {"label": "Renewal", "rev": [763101.0, 760906.0, 908818.0], "units": [2973.0, 3275.0, 3566.0], "rpd": [256.677205, 232.337713, 255.0]}]}, {"label": "RDB Passing", "children": []}, {"label": "Fuel Sensor", "children": [{"label": "Monthly", "rev": [4998417.349493244, 2366541.0, 4243581.0], "units": [9225.0, 3996.0, 9864.0], "rpd": [541.8338590236579, 592.227513, 430.0]}, {"label": "Non-Monthly", "rev": [11749191.716479208, 11679310.0, 7842352.0], "units": [18192.0, 4058.0, 16134.0], "rpd": [645.8438718381271, 2878.095223, 486.0]}]}, {"label": "Indus", "children": []}]};
 const MC=["#6366f1", "#f59e0b", "#10b981"];
 const CC=["#6366f1", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6"];
-
-const fmt=v=>{if(v>=1e7)return'\u20B9'+(v/1e7).toFixed(2)+' Cr';if(v>=1e5)return'\u20B9'+(v/1e5).toFixed(2)+' L';if(v===0)return'\u20B90';return'\u20B9'+v.toLocaleString('en-IN');};
-const fS=v=>{if(v>=1e7)return(v/1e7).toFixed(1)+'Cr';if(v>=1e5)return(v/1e5).toFixed(1)+'L';if(v===0)return'0';return v.toLocaleString('en-IN');};
+const fmt=v=>{if(v==null||isNaN(v))return'\u20B90';const a=Math.abs(v),s=v<0?'-':'';if(a>=1e7)return s+'\u20B9'+(a/1e7).toFixed(2)+' Cr';if(a>=1e5)return s+'\u20B9'+(a/1e5).toFixed(2)+' L';if(a===0)return'\u20B90';return s+'\u20B9'+a.toLocaleString('en-IN');};
+const fS=v=>{if(v==null||isNaN(v))return'0';const a=Math.abs(v),s=v<0?'-':'';if(a>=1e7)return s+(a/1e7).toFixed(1)+'Cr';if(a>=1e5)return s+(a/1e5).toFixed(1)+'L';if(a===0)return'0';return s+a.toLocaleString('en-IN');};
 const pct=(a,b)=>b===0?null:((a-b)/b*100);
-
 document.getElementById('sub').innerHTML=D.sheetNames.join(' \u2022 ')+' | All figures in INR (Revenue w/o GST)';
-
-// ========================================================================
-// GLOBAL FILTER STATE
-// ========================================================================
 let GF=new Set(D.shortLabels.map((_,i)=>i));
 const fm=()=>[...GF].sort((a,b)=>a-b);
 const isAll=()=>GF.size===D.numMonths;
-
 const charts={};
 function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
-
-// ========================================================================
-// BUILD GLOBAL FILTER BAR
-// ========================================================================
 function buildGlobalFilter(){
   const bar=document.getElementById('globalFilter');
   bar.querySelectorAll('.filter-btn').forEach(b=>b.remove());
-
   const allBtn=document.createElement('button');
   allBtn.className='filter-btn'+(isAll()?' active':'');
   allBtn.textContent='All Months';
   allBtn.onclick=()=>{D.shortLabels.forEach((_,i)=>GF.add(i));renderAll();};
   bar.appendChild(allBtn);
-
   D.shortLabels.forEach((lbl,mi)=>{
     const btn=document.createElement('button');
     const sel=GF.has(mi);
@@ -148,26 +134,11 @@ function buildGlobalFilter(){
     bar.appendChild(btn);
   });
 }
-
-// ========================================================================
-// RENDER ALL
-// ========================================================================
 function renderAll(){
   buildGlobalFilter();
-  renderKPIs();
-  renderMomRev();
-  renderMomDev();
-  renderDonut();
-  renderStacked();
-  renderRPD();
-  renderWaterfall();
-  renderBubble();
-  renderHeatmap();
+  renderKPIs(); renderMomRev(); renderMomDev(); renderDonut(); renderStacked();
+  renderRPD(); renderWaterfall(); renderBubble(); renderHeatmap();
 }
-
-// ========================================================================
-// KPIs
-// ========================================================================
 function renderKPIs(){
   const s=document.getElementById('kpiStrip');
   s.innerHTML='';
@@ -192,10 +163,6 @@ function renderKPIs(){
     s.innerHTML+=`<div class="kpi"><div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#8b5cf6"></div><div class="lbl">Active Categories</div><div class="val">${activeCats} / ${D.categories.length}</div></div>`;
   }
 }
-
-// ========================================================================
-// MoM REVENUE
-// ========================================================================
 function renderMomRev(){
   destroyChart('cMomRev');
   const months=fm();
@@ -214,10 +181,6 @@ function renderMomRev(){
       scales:{y:{ticks:{callback:v=>fS(v)},grid:{color:'#2a2d4260'}},x:{grid:{display:false}}}}
   });
 }
-
-// ========================================================================
-// MoM DEVICES
-// ========================================================================
 function renderMomDev(){
   destroyChart('cMomDev');
   const months=fm();
@@ -236,10 +199,6 @@ function renderMomDev(){
       scales:{y:{ticks:{callback:v=>v>=1000?(v/1000).toFixed(0)+'K':v},grid:{color:'#2a2d4260'}},x:{grid:{display:false}}}}
   });
 }
-
-// ========================================================================
-// DONUT
-// ========================================================================
 function renderDonut(){
   destroyChart('cDonut');
   const catColors=['#2563eb','#d97706','#059669','#dc2626','#7c3aed','#db2777','#0891b2','#ea580c','#65a30d','#e11d48'];
@@ -274,10 +233,6 @@ function renderDonut(){
       }}
   });
 }
-
-// ========================================================================
-// STACKED CHARTS
-// ========================================================================
 let stackedBuilt=false;
 function renderStacked(){
   const grid=document.getElementById('stackedGrid');
@@ -327,19 +282,64 @@ function renderStacked(){
     chart.draw();
   });
 }
-
-// ========================================================================
-// RPD
-// ========================================================================
+// RPD with filter groups
+const RPD_FILTER_GROUPS=[
+  {key:'AIS',         label:'AIS',         parents:['AIS Mining','AIS Passing']},
+  {key:'NON AIS',     label:'NON AIS',     parents:['NON AIS']},
+  {key:'Distributor', label:'Distributor', parents:['Distributor']},
+  {key:'RDB',         label:'RDB',         parents:['RDB Passing','RDB']},
+  {key:'Fuel Sensor', label:'Fuel Sensor', parents:['Fuel Sensor']},
+  {key:'Indus',       label:'Indus',       parents:['Indus']}
+];
+function rpdAvailableGroups(){return RPD_FILTER_GROUPS.filter(g=>g.parents.some(p=>D.categories.includes(p)));}
+let rpdSelectedGroup=(()=>{const avail=rpdAvailableGroups();return avail.length?avail[0].key:null;})();
+function getRpdSeries(group){
+  const matched=group.parents.filter(p=>D.categories.includes(p));
+  const series=[];
+  matched.forEach(parentLabel=>{
+    const cat=D.structure.find(c=>c.label===parentLabel);
+    if(!cat)return;
+    if(cat.children&&cat.children.length>0){
+      cat.children.forEach(ch=>{
+        let lbl;
+        if(matched.length>1){
+          let dist=parentLabel.replace(new RegExp('^'+group.key+'\\s*','i'),'').trim();
+          if(!dist)dist=parentLabel;
+          lbl=dist+' - '+ch.label;
+        } else { lbl=ch.label; }
+        series.push({label:lbl, rpd:ch.rpd||[]});
+      });
+    } else {
+      series.push({label:parentLabel, rpd:D.rpd[parentLabel]||[]});
+    }
+  });
+  return series;
+}
+function buildRpdFilter(){
+  const bar=document.getElementById('rpdFilterBar');
+  if(!bar)return;
+  bar.innerHTML='';
+  const avail=rpdAvailableGroups();
+  if(avail.length&&!avail.find(g=>g.key===rpdSelectedGroup))rpdSelectedGroup=avail[0].key;
+  avail.forEach(g=>{
+    const btn=document.createElement('button');
+    btn.className='rpd-fbtn'+(rpdSelectedGroup===g.key?' active':'');
+    btn.textContent=g.label;
+    btn.onclick=()=>{rpdSelectedGroup=g.key;renderRPD();};
+    bar.appendChild(btn);
+  });
+}
 function renderRPD(){
   destroyChart('cRpd');
+  buildRpdFilter();
   const months=fm();
-  const rpdCats=D.categories.filter(c=>D.rpd[c]&&months.some(mi=>D.rpd[c][mi]>0));
   const labels=months.map(mi=>D.shortLabels[mi]);
-  const datasets=rpdCats.map((c,ci)=>{
-    const vals=months.map(mi=>D.rpd[c][mi]);
+  const group=RPD_FILTER_GROUPS.find(g=>g.key===rpdSelectedGroup);
+  const series=group?getRpdSeries(group):[];
+  const datasets=series.map((s,ci)=>{
+    const vals=months.map(mi=>(s.rpd[mi]!=null?s.rpd[mi]:0));
     const col=CC[ci%CC.length];
-    return {label:c,data:vals,borderColor:col,backgroundColor:col+'20',pointBackgroundColor:col,pointBorderColor:'#1a1d2e',
+    return {label:s.label,data:vals,borderColor:col,backgroundColor:col+'20',pointBackgroundColor:col,pointBorderColor:'#1a1d2e',
       pointRadius:6,pointHoverRadius:9,borderWidth:2.5,tension:0.3,fill:true,
       datalabels:{display:true,color:col,anchor:'end',align:'top',font:{weight:'bold',size:10},offset:4,
         formatter:v=>v>0?'\u20B9'+v.toFixed(0):''}};
@@ -350,14 +350,10 @@ function renderRPD(){
     options:{responsive:true,maintainAspectRatio:false,animation:{duration:500},
       interaction:{mode:'index',intersect:false},
       plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:14}},
-        tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': \u20B9'+ctx.raw.toFixed(2)}}},
+        tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': \u20B9'+(ctx.raw!=null?ctx.raw.toFixed(2):'0')}}},
       scales:{y:{title:{display:true,text:'\u20B9 per Device'},ticks:{callback:v=>'\u20B9'+v},grid:{color:'#2a2d4260'}},x:{grid:{color:'#2a2d4220'}}}}
   });
 }
-
-// ========================================================================
-// WATERFALL
-// ========================================================================
 function renderWaterfall(){
   destroyChart('cWaterfall');
   const months=fm();
@@ -400,86 +396,195 @@ function renderWaterfall(){
       scales:{y:{stacked:true,ticks:{callback:v=>fS(v)},grid:{color:'#2a2d4260'}},x:{stacked:true,grid:{display:false}}}}
   });
 }
+// Bubble chart shares the same group definitions as the RPD chart, but tracks its own selection.
+let bubbleSelectedGroup=(()=>{const avail=rpdAvailableGroups();return avail.length?avail[0].key:null;})();
 
-// ========================================================================
-// BUBBLE
-// ========================================================================
+function getBubbleSeries(group){
+  const matched=group.parents.filter(p=>D.categories.includes(p));
+  const series=[];
+  matched.forEach(parentLabel=>{
+    const cat=D.structure.find(c=>c.label===parentLabel);
+    if(!cat)return;
+    if(cat.children&&cat.children.length>0){
+      cat.children.forEach(ch=>{
+        let lbl;
+        if(matched.length>1){
+          let dist=parentLabel.replace(new RegExp('^'+group.key+'\\s*','i'),'').trim();
+          if(!dist)dist=parentLabel;
+          lbl=dist+' - '+ch.label;
+        } else { lbl=ch.label; }
+        series.push({label:lbl, units:ch.units||[], rev:ch.rev||[]});
+      });
+    } else {
+      series.push({label:parentLabel, units:D.units[parentLabel]||[], rev:D.rev[parentLabel]||[]});
+    }
+  });
+  return series;
+}
+
+function buildBubbleFilter(){
+  const bar=document.getElementById('bubbleFilterBar');
+  if(!bar)return;
+  bar.innerHTML='';
+  const avail=rpdAvailableGroups();
+  if(avail.length&&!avail.find(g=>g.key===bubbleSelectedGroup))bubbleSelectedGroup=avail[0].key;
+  avail.forEach(g=>{
+    const btn=document.createElement('button');
+    btn.className='rpd-fbtn'+(bubbleSelectedGroup===g.key?' active':'');
+    btn.textContent=g.label;
+    btn.onclick=()=>{bubbleSelectedGroup=g.key;renderBubble();};
+    bar.appendChild(btn);
+  });
+}
+
 function renderBubble(){
   destroyChart('cBubble');
-  const months=fm();const datasets=[];
-  months.forEach(mi=>{
-    D.categories.forEach((c,ci)=>{
-      const r=D.rev[c][mi],u=D.units[c][mi];if(r===0&&u===0)return;
-      datasets.push({label:D.shortLabels[mi]+' - '+c,data:[{x:u,y:r,r:Math.max(5,Math.sqrt(r/150000))}],
-        backgroundColor:MC[mi%MC.length]+(55+ci*25).toString(16).padStart(2,'0'),borderColor:CC[ci%CC.length],borderWidth:2});
+  buildBubbleFilter();
+  const months=fm();
+  const group=RPD_FILTER_GROUPS.find(g=>g.key===bubbleSelectedGroup);
+  const series=group?getBubbleSeries(group):[];
+  // bubble radius scaling — relative to max revenue in the active series
+  let maxR=1;
+  series.forEach(s=>months.forEach(mi=>{const v=s.rev[mi]||0;if(v>maxR)maxR=v;}));
+  const datasets=[];
+  series.forEach((s,si)=>{
+    months.forEach(mi=>{
+      const r=s.rev[mi]||0, u=s.units[mi]||0;
+      if(r===0&&u===0)return;
+      datasets.push({
+        label:D.shortLabels[mi]+' \u2014 '+s.label,
+        data:[{x:u,y:r,r:Math.max(6,Math.min(40,Math.sqrt(r/maxR)*32))}],
+        backgroundColor:MC[mi%MC.length]+'cc',
+        borderColor:CC[si%CC.length],
+        borderWidth:2
+      });
     });
   });
   charts.cBubble=new Chart(document.getElementById('cBubble'),{
     type:'bubble',data:{datasets},
     options:{responsive:true,maintainAspectRatio:false,animation:{duration:500},
-      plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:10,font:{size:10}}}},
+      plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:10,font:{size:10}}},
+        tooltip:{callbacks:{label:ctx=>{const d=ctx.raw;return ctx.dataset.label+': '+(d.x>=1000?(d.x/1000).toFixed(1)+'K':d.x)+' devices, '+fmt(d.y);}}}},
       scales:{x:{title:{display:true,text:'Unique Devices'},ticks:{callback:v=>v>=1000?(v/1000).toFixed(0)+'K':v},grid:{color:'#2a2d4260'}},
         y:{title:{display:true,text:'Revenue (w/o GST)'},ticks:{callback:v=>fS(v)},grid:{color:'#2a2d4260'}}}}
   });
 }
+// Heatmap metric definitions — each toggleable button adds its own column group.
+// Hue tuples are [pr_base_r,g,b, pr_mul_r,g,b, ch_base_r,g,b, ch_mul_r,g,b] for color scaling.
+const HEATMAP_METRICS=[
+  {key:'rev',   label:'Revenue',    catGet:lbl=>D.rev[lbl]||[],   chGet:ch=>ch.rev||[],   totalFn:arr=>arr.reduce((a,b)=>a+b,0), totalLbl:'Total', fmtV:v=>fS(v), hue:[30,40,80, 69,62,161, 25,50,60, 45,80,100]},
+  {key:'units', label:'Devices',    catGet:lbl=>D.units[lbl]||[], chGet:ch=>ch.units||[], totalFn:arr=>arr.reduce((a,b)=>a+b,0), totalLbl:'Total', fmtV:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1000?(v/1000).toFixed(1)+'K':Math.round(v).toLocaleString('en-IN'), hue:[20,60,30, 35,100,90, 20,55,35, 40,85,70]},
+  {key:'rpd',   label:'Rev/Device', catGet:lbl=>D.rpd[lbl]||[],   chGet:ch=>ch.rpd||[],   totalFn:arr=>{const f=arr.filter(x=>x>0);return f.length?f.reduce((a,b)=>a+b,0)/f.length:0;}, totalLbl:'Avg', fmtV:v=>'\u20B9'+Math.round(v).toLocaleString('en-IN'), hue:[80,50,20, 160,80,30, 65,40,15, 130,70,30]}
+];
+const heatmapActive=new Set(['rev']);
 
-// ========================================================================
-// HEATMAP
-// ========================================================================
-function renderHeatmap(){
-  const tbl=document.getElementById('heatmap');
-  const months=fm();
-  const allVals=[];
-  D.categories.forEach(c=>months.forEach(mi=>allVals.push(D.rev[c][mi])));
-  D.structure.forEach(cat=>cat.children.forEach(ch=>months.forEach(mi=>allVals.push(ch.rev[mi]))));
-  const maxV=Math.max(...allVals,1);
-  const cs=(v,p)=>{if(v===0)return'rgba(42,45,66,0.6)';const i=Math.pow(v/maxV,0.6);
-    if(p)return`rgba(${Math.round(30+i*69)},${Math.round(40+i*62)},${Math.round(80+i*161)},0.9)`;
-    return`rgba(${Math.round(25+i*45)},${Math.round(50+i*80)},${Math.round(60+i*100)},0.7)`;};
-
-  const multi=months.length>1;
-  let momH='';
-  if(multi){for(let i=1;i<months.length;i++)momH+=`<th>${D.shortLabels[months[i]]} vs ${D.shortLabels[months[i-1]]}</th>`;}
-
-  let h=`<tr><th>Category / Sub-Segment</th>`;
-  months.forEach(mi=>{h+=`<th>${D.shortLabels[mi]}</th>`;});
-  h+=`<th>Total</th>${momH}</tr>`;
-
-  D.structure.forEach(cat=>{
-    const d=months.map(mi=>D.rev[cat.label][mi]);
-    const tot=d.reduce((a,b)=>a+b,0);
-    let mc='';
-    if(multi){for(let i=1;i<months.length;i++){const prev=d[i-1],curr=d[i];
-      const val=prev===0?'\u2014':((curr-prev)/prev*100).toFixed(1)+'%';const col=prev===0?'var(--muted)':(curr>=prev?'#10b981':'#ef4444');
-      mc+=`<td style="background:transparent;color:${col};font-weight:600;text-align:center">${val}</td>`;}}
-    h+=`<tr class="pr"><td>${cat.label}</td>`;
-    d.forEach(v=>{h+=`<td style="background:${cs(v,true)};color:#fff">${fS(v)}</td>`;});
-    h+=`<td style="background:${cs(tot,true)};color:#fff;font-weight:700">${fS(tot)}</td>${mc}</tr>`;
-
-    cat.children.forEach(ch=>{
-      const sd=months.map(mi=>ch.rev[mi]);const st=sd.reduce((a,b)=>a+b,0);let sm='';
-      if(multi){for(let i=1;i<months.length;i++){const prev=sd[i-1],curr=sd[i];
-        const val=prev===0?'\u2014':((curr-prev)/prev*100).toFixed(1)+'%';const col=prev===0?'var(--muted)':(curr>=prev?'#10b981':'#ef4444');
-        sm+=`<td style="background:transparent;color:${col};text-align:center;font-size:12px">${val}</td>`;}}
-      h+=`<tr class="cr"><td>${ch.label}</td>`;
-      sd.forEach(v=>{h+=`<td style="background:${cs(v,false)};color:#c8cbda">${fS(v)}</td>`;});
-      h+=`<td style="background:${cs(st,false)};color:#e2e4ed">${fS(st)}</td>${sm}</tr>`;
-    });
-    h+='<tr class="gr"><td colspan="'+(months.length+2+(multi?months.length-1:0))+'"></td></tr>';
+function buildHeatmapMetricBar(){
+  const bar=document.getElementById('heatmapMetricBar');
+  if(!bar)return;
+  bar.innerHTML='';
+  HEATMAP_METRICS.forEach(m=>{
+    const btn=document.createElement('button');
+    btn.className='rpd-fbtn'+(heatmapActive.has(m.key)?' active':'');
+    btn.textContent=m.label;
+    btn.onclick=()=>{
+      if(heatmapActive.has(m.key)){if(heatmapActive.size>1)heatmapActive.delete(m.key);}
+      else heatmapActive.add(m.key);
+      renderHeatmap();
+    };
+    bar.appendChild(btn);
   });
-
-  const gpm=months.map(mi=>D.categories.reduce((s,c)=>s+D.rev[c][mi],0));const gt=gpm.reduce((a,b)=>a+b,0);
-  h+=`<tr class="pr"><td style="color:#a5b4fc">GRAND TOTAL</td>`;
-  gpm.forEach(v=>{h+=`<td style="background:#4338ca;color:#fff;font-weight:700">${fS(v)}</td>`;});
-  h+=`<td style="background:#6366f1;color:#fff;font-weight:800">${fS(gt)}</td>`;
-  if(multi)h+=`<td colspan="${months.length-1}"></td>`;
-  h+=`</tr>`;
-  tbl.innerHTML=h;
 }
 
-// ========================================================================
-// INITIAL RENDER
-// ========================================================================
+function renderHeatmap(){
+  buildHeatmapMetricBar();
+  const tbl=document.getElementById('heatmap');
+  const months=fm();
+  const multi=months.length>1;
+  const active=HEATMAP_METRICS.filter(m=>heatmapActive.has(m.key));
+  if(active.length===0){tbl.innerHTML='<tr><td style="padding:20px;color:var(--muted)">Select at least one metric above.</td></tr>';return;}
+
+  const metricMax={};
+  active.forEach(m=>{
+    const vals=[];
+    D.structure.forEach(cat=>{
+      const cd=m.catGet(cat.label);
+      months.forEach(mi=>vals.push(cd[mi]||0));
+      cat.children.forEach(ch=>{const chd=m.chGet(ch);months.forEach(mi=>vals.push(chd[mi]||0));});
+    });
+    metricMax[m.key]=Math.max(...vals.map(Math.abs),1);
+  });
+
+  const cs=(v,isParent,m)=>{
+    if(!v)return'rgba(42,45,66,0.6)';
+    const i=Math.pow(Math.abs(v)/(metricMax[m.key]||1),0.6);
+    const h=m.hue;
+    const alpha=isParent?0.9:0.7;
+    if(isParent)return`rgba(${Math.round(h[0]+i*h[3])},${Math.round(h[1]+i*h[4])},${Math.round(h[2]+i*h[5])},${alpha})`;
+    return`rgba(${Math.round(h[6]+i*h[9])},${Math.round(h[7]+i*h[10])},${Math.round(h[8]+i*h[11])},${alpha})`;
+  };
+
+  const colsPerMetric=months.length+1+(multi?months.length-1:0);
+  let h=`<tr><th rowspan="2" style="vertical-align:bottom">Category / Sub-Segment</th>`;
+  active.forEach(m=>{h+=`<th colspan="${colsPerMetric}" style="text-align:center;border-bottom:2px solid var(--border);color:#a5b4fc;font-weight:700">${m.label}</th>`;});
+  h+=`</tr><tr>`;
+  active.forEach(m=>{
+    months.forEach(mi=>{h+=`<th>${D.shortLabels[mi]}</th>`;});
+    h+=`<th>${m.totalLbl}</th>`;
+    if(multi){for(let i=1;i<months.length;i++)h+=`<th>${D.shortLabels[months[i]]} vs ${D.shortLabels[months[i-1]]}</th>`;}
+  });
+  h+=`</tr>`;
+
+  const renderRowCells=(getter,isParent)=>{
+    let row='';
+    active.forEach(m=>{
+      const d=months.map(mi=>(getter(m)[mi]||0));
+      const tot=m.totalFn(d);
+      d.forEach(v=>{row+=`<td style="background:${cs(v,isParent,m)};color:${isParent?'#fff':'#c8cbda'}${isParent?'':''}">${m.fmtV(v)}</td>`;});
+      row+=`<td style="background:${cs(tot,isParent,m)};color:${isParent?'#fff':'#e2e4ed'};font-weight:${isParent?700:500}">${m.fmtV(tot)}</td>`;
+      if(multi){for(let i=1;i<months.length;i++){
+        const prev=d[i-1],curr=d[i];
+        const val=prev===0?'\u2014':((curr-prev)/prev*100).toFixed(1)+'%';
+        const col=prev===0?'var(--muted)':(curr>=prev?'#10b981':'#ef4444');
+        row+=`<td style="background:transparent;color:${col};font-weight:${isParent?600:400};text-align:center;font-size:${isParent?'13px':'12px'}">${val}</td>`;
+      }}
+    });
+    return row;
+  };
+
+  D.structure.forEach(cat=>{
+    h+=`<tr class="pr"><td>${cat.label}</td>`+renderRowCells(m=>m.catGet(cat.label),true)+`</tr>`;
+    cat.children.forEach(ch=>{
+      h+=`<tr class="cr"><td>${ch.label}</td>`+renderRowCells(m=>m.chGet(ch),false)+`</tr>`;
+    });
+    h+=`<tr class="gr"><td colspan="${1+active.length*colsPerMetric}"></td></tr>`;
+  });
+
+  // Grand total: rev/units = sum across categories per month; rpd = weighted avg = totalRev/totalUnits
+  let grand=`<tr class="pr"><td style="color:#a5b4fc">GRAND TOTAL</td>`;
+  active.forEach(m=>{
+    const gpm=months.map(mi=>{
+      if(m.key==='rpd'){
+        const tR=D.categories.reduce((s,c)=>s+(D.rev[c][mi]||0),0);
+        const tU=D.categories.reduce((s,c)=>s+(D.units[c][mi]||0),0);
+        return tU>0?tR/tU:0;
+      }
+      return D.categories.reduce((s,c)=>s+(m.catGet(c)[mi]||0),0);
+    });
+    let gt;
+    if(m.key==='rpd'){
+      const tRall=months.reduce((s,mi)=>s+D.categories.reduce((a,c)=>a+(D.rev[c][mi]||0),0),0);
+      const tUall=months.reduce((s,mi)=>s+D.categories.reduce((a,c)=>a+(D.units[c][mi]||0),0),0);
+      gt=tUall>0?tRall/tUall:0;
+    } else { gt=m.totalFn(gpm); }
+    gpm.forEach(v=>{grand+=`<td style="background:#4338ca;color:#fff;font-weight:700">${m.fmtV(v)}</td>`;});
+    grand+=`<td style="background:#6366f1;color:#fff;font-weight:800">${m.fmtV(gt)}</td>`;
+    if(multi)grand+=`<td colspan="${months.length-1}"></td>`;
+  });
+  grand+='</tr>';
+  h+=grand;
+
+  tbl.innerHTML=h;
+}
 renderAll();
 </script>
 </body>
