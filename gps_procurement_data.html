@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GPS Procurement Analytics — FY 2025–26</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=JetBrains+Mono:wght@400;500;600&family=Inter+Tight:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --ink: #0f1419;
+    --paper: #f4f1ea;
+    --paper-2: #ebe6da;
+    --cream: #fbf8f1;
+    --rule: #d4cdb8;
+    --muted: #6b6555;
+    --accent: #c1432b;
+    --accent-2: #2d4a3a;
+    --accent-3: #b8862e;
+    --warn: #b8862e;
+    --shadow: 0 1px 0 rgba(15,20,25,0.04), 0 8px 24px -12px rgba(15,20,25,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter Tight', sans-serif;
+    background: var(--paper); color: var(--ink); line-height: 1.5; min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at top left, rgba(193,67,43,0.04), transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(45,74,58,0.04), transparent 50%);
+  }
+  .grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 1;
+    opacity: 0.4; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.06 0 0 0 0 0.08 0 0 0 0 0.1 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .container { max-width: 1400px; margin: 0 auto; padding: 48px 32px 96px; position: relative; z-index: 2; }
+
+  .masthead {
+    border-bottom: 2px solid var(--ink); padding-bottom: 24px; margin-bottom: 40px;
+    display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 24px;
+  }
+  .masthead .brand-row {
+    display: flex; align-items: baseline; gap: 16px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted); margin-bottom: 12px;
+  }
+  .masthead .brand-row span:first-child { color: var(--accent); font-weight: 600; }
+  .masthead .brand-row .pipe { color: var(--rule); }
+  h1 {
+    font-family: 'Fraunces', serif; font-weight: 400;
+    font-size: clamp(36px, 5.5vw, 68px); line-height: 0.95;
+    letter-spacing: -0.025em; font-variation-settings: "opsz" 144;
+  }
+  h1 em { font-style: italic; font-weight: 300; color: var(--accent); }
+  .masthead .meta {
+    text-align: right; font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--muted); line-height: 1.8;
+  }
+  .masthead .meta strong { color: var(--ink); font-weight: 600; }
+
+  .section-head {
+    display: flex; align-items: baseline; gap: 16px;
+    margin: 56px 0 24px;
+    border-bottom: 1px solid var(--rule); padding-bottom: 12px;
+  }
+  .section-head .num { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); font-weight: 600; }
+  .section-head h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 26px; letter-spacing: -0.01em; }
+  .section-head .desc { margin-left: auto; font-size: 13px; color: var(--muted); font-style: italic; font-family: 'Fraunces', serif; }
+
+  .kpis {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px;
+    background: var(--rule); border: 1px solid var(--rule); margin-bottom: 8px;
+  }
+  .kpi { background: var(--cream); padding: 22px 20px; transition: background 0.3s ease; }
+  .kpi:hover { background: #fff; }
+  .kpi .label {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted); margin-bottom: 8px;
+  }
+  .kpi .value {
+    font-family: 'Fraunces', serif; font-weight: 500;
+    font-size: 36px; line-height: 1; letter-spacing: -0.02em;
+    font-variation-settings: "opsz" 144;
+  }
+  .kpi .sub { font-size: 12px; color: var(--muted); margin-top: 6px; font-family: 'JetBrains Mono', monospace; }
+  .kpi.accent .value { color: var(--accent); }
+  .kpi.warn .value { color: var(--warn); }
+
+  .chart-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-bottom: 8px; }
+  .chart-card { background: var(--cream); border: 1px solid var(--rule); padding: 24px; box-shadow: var(--shadow); }
+  .chart-card.full { grid-column: 1 / -1; }
+  .chart-card h3 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 18px; margin-bottom: 4px; }
+  .chart-card .sub-title {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted); margin-bottom: 20px;
+  }
+  .chart-wrap { position: relative; height: 320px; }
+  .chart-wrap.tall { height: 380px; }
+
+  /* PRICE VARIANCE PANEL */
+  .variance-panel {
+    background: linear-gradient(180deg, rgba(184,134,46,0.06), rgba(184,134,46,0.02));
+    border: 1px solid rgba(184,134,46,0.4);
+    padding: 24px 26px; margin-bottom: 8px; position: relative;
+  }
+  .variance-panel::before {
+    content: ""; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+    background: var(--warn);
+  }
+  .variance-panel h3 {
+    font-family: 'Fraunces', serif; font-weight: 500; font-size: 20px;
+    margin-bottom: 4px;
+  }
+  .variance-panel .lead {
+    font-family: 'Fraunces', serif; font-style: italic; color: var(--muted);
+    font-size: 14px; margin-bottom: 18px;
+  }
+  .variance-list {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(310px,1fr)); gap: 14px;
+  }
+  .variance-item {
+    background: var(--cream); border: 1px solid var(--rule); padding: 14px 16px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .variance-item .who {
+    font-family: 'Inter Tight', sans-serif; font-weight: 600; font-size: 13px;
+    color: var(--ink); margin-bottom: 2px; line-height: 1.3;
+  }
+  .variance-item .when {
+    font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em;
+    margin-bottom: 10px;
+  }
+  .variance-item .prices {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  }
+  .variance-item .pchip {
+    background: var(--paper-2); padding: 4px 9px; font-size: 11px; font-weight: 600;
+    border: 1px solid var(--rule); white-space: nowrap;
+  }
+  .variance-item .pchip .qty { color: var(--muted); font-weight: 400; margin-left: 6px; font-size: 10px; }
+  .variance-item .delta {
+    margin-top: 10px; font-size: 11px; color: var(--warn); font-weight: 600;
+    border-top: 1px dashed var(--rule); padding-top: 8px;
+  }
+  .variance-item .delta .pct { color: var(--accent); }
+
+  /* PICKER + STATE DETAIL */
+  .picker-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; align-items: center; }
+  .picker-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted); margin-right: 8px;
+  }
+  .chip {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    padding: 8px 14px; background: var(--cream); border: 1px solid var(--rule);
+    cursor: pointer; letter-spacing: 0.05em; transition: all 0.2s ease;
+    color: var(--ink); font-weight: 500;
+  }
+  .chip:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .chip.active {
+    background: var(--ink); color: var(--paper); border-color: var(--ink);
+    box-shadow: 0 0 0 3px var(--paper), 0 0 0 4px var(--ink);
+  }
+  .chip .qty { margin-left: 8px; opacity: 0.6; font-size: 10px; }
+
+  .state-detail { background: var(--cream); border: 1px solid var(--rule); padding: 32px; box-shadow: var(--shadow); }
+  .state-detail-header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 4px; flex-wrap: wrap; gap: 16px;
+  }
+  .state-detail h3 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 28px; letter-spacing: -0.01em; }
+  .state-detail h3 .code { color: var(--accent); font-style: italic; margin-right: 8px; }
+  .state-detail .totals { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .state-detail .totals strong { color: var(--ink); font-weight: 600; font-size: 13px; }
+  .state-detail .totals .sep { color: var(--rule); margin: 0 10px; }
+  .state-detail .caption {
+    font-family: 'Fraunces', serif; font-style: italic; color: var(--muted);
+    font-size: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--rule); padding-bottom: 16px;
+  }
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 18px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted);
+  }
+  .legend .item { display: flex; align-items: center; gap: 6px; }
+  .legend .sw { width: 14px; height: 14px; display: inline-block; border: 1px solid var(--rule); }
+  .legend .sw.var { background: rgba(184,134,46,0.15); border-color: var(--warn); }
+  .legend .sw.uniform { background: var(--cream); }
+
+  .table-wrap { overflow-x: auto; margin-top: 8px; }
+  table.detail-table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; }
+  table.detail-table thead th {
+    text-align: right; padding: 10px 12px;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted); font-weight: 600; border-bottom: 2px solid var(--ink);
+    white-space: nowrap; background: var(--cream);
+  }
+  table.detail-table thead th.vendor-col { text-align: left; min-width: 230px; }
+  table.detail-table thead th.month-group {
+    text-align: center; border-bottom: 1px solid var(--rule); border-left: 1px solid var(--rule);
+    color: var(--accent); font-family: 'Fraunces', serif; font-style: italic;
+    text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 500; padding-bottom: 6px;
+  }
+  table.detail-table thead th.sub { font-size: 9px; padding-top: 6px; padding-bottom: 8px; }
+  table.detail-table thead th.sub.first { border-left: 1px solid var(--rule); }
+  table.detail-table tbody td {
+    padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--rule);
+    font-variant-numeric: tabular-nums; vertical-align: top;
+  }
+  table.detail-table tbody td.vendor {
+    text-align: left; font-family: 'Inter Tight', sans-serif;
+    font-size: 13px; font-weight: 500; color: var(--ink); max-width: 260px;
+  }
+  table.detail-table tbody td.first { border-left: 1px solid var(--rule); }
+  table.detail-table tbody td.zero { color: #c5bea8; }
+  table.detail-table tbody td.has-variance {
+    background: rgba(184,134,46,0.10);
+    box-shadow: inset 3px 0 0 var(--warn);
+  }
+  table.detail-table tbody tr:hover td:not(.has-variance) { background: rgba(193,67,43,0.04); }
+  table.detail-table tbody tr:hover td.has-variance { background: rgba(184,134,46,0.18); }
+
+  /* PRICE STACK inside cells */
+  .price-stack { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+  .price-row {
+    display: flex; gap: 8px; align-items: baseline; font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+  .price-row .price { font-weight: 600; color: var(--ink); }
+  .price-row .units { color: var(--muted); font-size: 10px; }
+  .price-stack.multi .price-row + .price-row { border-top: 1px dotted rgba(184,134,46,0.5); padding-top: 4px; }
+  .price-stack .wavg {
+    margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--warn);
+    font-size: 10px; color: var(--warn); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .qty-stack { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+  .qty-stack .qrow { font-size: 11px; }
+  .qty-stack .qrow.muted { color: var(--muted); font-size: 10px; }
+  .qty-stack .qtotal {
+    margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--warn);
+    font-weight: 700; font-size: 12px;
+  }
+
+  table.detail-table tfoot td {
+    padding: 14px 12px; text-align: right; border-top: 2px solid var(--ink);
+    font-weight: 700; font-variant-numeric: tabular-nums; background: var(--paper-2);
+  }
+  table.detail-table tfoot td.vendor {
+    text-align: left; font-family: 'Fraunces', serif; font-style: italic; font-weight: 500; font-size: 13px;
+  }
+  table.detail-table tfoot td.first { border-left: 1px solid var(--ink); }
+
+  /* HEATMAP */
+  .heatmap-wrap { overflow-x: auto; }
+  table.heatmap { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 12px; min-width: 600px; }
+  table.heatmap th {
+    padding: 10px 12px; text-align: center; font-weight: 500;
+    text-transform: uppercase; font-size: 10px; letter-spacing: 0.1em;
+    color: var(--muted); border-bottom: 1px solid var(--ink);
+  }
+  table.heatmap th:first-child { text-align: left; color: var(--ink); }
+  table.heatmap td {
+    padding: 12px; text-align: center; font-variant-numeric: tabular-nums;
+    border-bottom: 1px solid var(--rule); transition: transform 0.15s ease;
+  }
+  table.heatmap td:first-child { text-align: left; font-weight: 600; font-family: 'Fraunces',serif; font-style: italic; font-size: 14px; }
+  table.heatmap td.cell:hover { transform: scale(1.08); z-index: 2; position: relative; }
+  table.heatmap td .count { font-size: 9px; opacity: 0.7; display: block; margin-top: 2px; }
+
+  .footer {
+    margin-top: 80px; padding-top: 24px; border-top: 1px solid var(--rule);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted);
+  }
+
+  @media (max-width: 980px) {
+    .container { padding: 28px 18px 64px; }
+    .masthead { grid-template-columns: 1fr; }
+    .masthead .meta { text-align: left; }
+    .kpis { grid-template-columns: 1fr 1fr; }
+    .chart-grid { grid-template-columns: 1fr; }
+    .chart-wrap { height: 280px; }
+    h1 { font-size: 42px; }
+    .state-detail { padding: 20px; }
+    .state-detail h3 { font-size: 22px; }
+    .section-head { flex-wrap: wrap; }
+    .section-head .desc { margin-left: 0; width: 100%; }
+  }
+  @media (max-width: 560px) {
+    .kpis { grid-template-columns: 1fr; }
+    .kpi .value { font-size: 32px; }
+    .variance-list { grid-template-columns: 1fr; }
+  }
+
+  @keyframes rise { from { opacity:0; transform: translateY(12px);} to {opacity:1; transform:none;} }
+  .masthead, .section-head, .kpis, .chart-card, .picker-row, .state-detail, .footer, .variance-panel {
+    animation: rise 0.7s ease both;
+  }
+  .section-head { animation-delay: 0.05s; }
+  .kpis { animation-delay: 0.1s; }
+  .chart-card { animation-delay: 0.15s; }
+  .chart-card:nth-child(2) { animation-delay: 0.2s; }
+  .picker-row { animation-delay: 0.25s; }
+  .state-detail { animation-delay: 0.3s; }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<div class="container">
+
+  <header class="masthead">
+    <div>
+      <div class="brand-row">
+        <span>BlackBuck</span><span class="pipe">/</span>
+        <span>Services Finance</span><span class="pipe">/</span>
+        <span>Procurement Analytics</span>
+      </div>
+      <h1>GPS Procurement<br><em>quantity &amp; price by state, month, vendor</em></h1>
+    </div>
+    <div class="meta">
+      <div><strong>Period</strong> &nbsp; FY 25–26</div>
+      <div><strong>Source</strong> &nbsp; Fresh Procurement</div>
+      <div><strong>Scope</strong> &nbsp; GPS devices only</div>
+      <div><strong>Generated</strong> &nbsp; <span id="gen-date"></span></div>
+    </div>
+  </header>
+
+  <div class="section-head">
+    <span class="num">§ 01</span>
+    <h2>At a glance</h2>
+    <span class="desc">Aggregate totals across all states, months and vendors</span>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="section-head">
+    <span class="num">§ 02</span>
+    <h2>Three lenses on the same total</h2>
+    <span class="desc">Quantity (sum) split by month, by state and by vendor</span>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Monthly cadence</h3>
+      <div class="sub-title">Qty — sum by payment month</div>
+      <div class="chart-wrap"><canvas id="monthChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Geography</h3>
+      <div class="sub-title">Qty — sum by state</div>
+      <div class="chart-wrap"><canvas id="stateChart"></canvas></div>
+    </div>
+    <div class="chart-card full">
+      <h3>Vendor concentration &amp; price</h3>
+      <div class="sub-title">Qty (bars) vs. weighted-avg per-device price (line)</div>
+      <div class="chart-wrap tall"><canvas id="vendorChart"></canvas></div>
+    </div>
+    <div class="chart-card full">
+      <h3>Month × State heatmap</h3>
+      <div class="sub-title">Quantity intensity — bigger ink, bigger volume</div>
+      <div class="heatmap-wrap" id="heatmap"></div>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <span class="num">§ 03</span>
+    <h2>Price variance flags</h2>
+    <span class="desc">Same vendor + state + month with multiple per-device prices</span>
+  </div>
+
+  <div class="variance-panel" id="variancePanel"></div>
+
+  <div class="section-head">
+    <span class="num">§ 04</span>
+    <h2>State drill-down</h2>
+    <span class="desc">Pick a state to see its vendor × month matrix with per-device prices</span>
+  </div>
+
+  <div class="picker-row" id="picker">
+    <span class="picker-label">Select state →</span>
+  </div>
+
+  <div class="state-detail" id="stateDetail"></div>
+
+  <footer class="footer">
+    <span>BlackBuck Services Finance — Procurement Analytics</span>
+    <span>Rows excluded: State ∈ {Accessories, Fuel Sensor GPS}</span>
+  </footer>
+</div>
+
+<script>
+const DATA = [{"Payment Month": "Mar'26", "State": "UP", "Vendor": "Naya Bharat Engineering Private Limited", "Qty": 300, "PerDevice": 7850.0}, {"Payment Month": "Mar'26", "State": "MH", "Vendor": "RDM ENTERPRISES PRIVATE LIMITED", "Qty": 500, "PerDevice": 9500.0}, {"Payment Month": "Mar'26", "State": "MP", "Vendor": "TECYUG INNOVATIONS", "Qty": 100, "PerDevice": 7203.39}, {"Payment Month": "Mar'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 600, "PerDevice": 2750.0}, {"Payment Month": "Mar'26", "State": "MH", "Vendor": "RDM ENTERPRISES PRIVATE LIMITED", "Qty": 50, "PerDevice": 9550.0}, {"Payment Month": "Mar'26", "State": "MH", "Vendor": "RDM ENTERPRISES PRIVATE LIMITED", "Qty": 50, "PerDevice": 9550.0}, {"Payment Month": "Mar'26", "State": "MH", "Vendor": "RDM ENTERPRISES PRIVATE LIMITED", "Qty": 50, "PerDevice": 9550.0}, {"Payment Month": "Mar'26", "State": "MH", "Vendor": "RDM ENTERPRISES PRIVATE LIMITED", "Qty": 400, "PerDevice": 9550.0}, {"Payment Month": "Mar'26", "State": "RJ", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 200, "PerDevice": 5500.0}, {"Payment Month": "Mar'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 350, "PerDevice": 2750.0}, {"Payment Month": "Mar'26", "State": "MP", "Vendor": "TECYUG INNOVATIONS", "Qty": 100, "PerDevice": 7203.39}, {"Payment Month": "Mar'26", "State": "UP", "Vendor": "Naya Bharat Engineering Private Limited", "Qty": 200, "PerDevice": 8000.0}, {"Payment Month": "Mar'26", "State": "UP", "Vendor": "Naya Bharat Engineering Private Limited", "Qty": 700, "PerDevice": 8000.0}, {"Payment Month": "Mar'26", "State": "UP", "Vendor": "Naya Bharat Engineering Private Limited", "Qty": 500, "PerDevice": 7850.0}, {"Payment Month": "Mar'26", "State": "UP", "Vendor": "Naya Bharat Engineering Private Limited", "Qty": 500, "PerDevice": 8000.0}, {"Payment Month": "Mar'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 400, "PerDevice": 2750.0}, {"Payment Month": "Mar'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 400, "PerDevice": 2750.0}, {"Payment Month": "Mar'26", "State": "MH", "Vendor": "Shree Venkatesh Tracking System", "Qty": 500, "PerDevice": 9500.0}, {"Payment Month": "Mar'26", "State": "MH", "Vendor": "Shree Venkatesh Tracking System", "Qty": 500, "PerDevice": 9500.0}, {"Payment Month": "Feb'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 200, "PerDevice": 5276.0}, {"Payment Month": "Feb'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 200, "PerDevice": 1800.0}, {"Payment Month": "Feb'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 100, "PerDevice": 5276.0}, {"Payment Month": "Feb'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 100, "PerDevice": 1800.0}, {"Payment Month": "Feb'26", "State": "MH", "Vendor": "R R MOTORS", "Qty": 250, "PerDevice": 9500.0}, {"Payment Month": "Feb'26", "State": "UP", "Vendor": "Naya Bharat Engineering Private Limited", "Qty": 1000, "PerDevice": 8000.0}, {"Payment Month": "Feb'26", "State": "UP", "Vendor": "Naya Bharat Engineering Private Limited", "Qty": 1000, "PerDevice": 8000.0}, {"Payment Month": "Feb'26", "State": "GJ", "Vendor": "Roadpoint Limited", "Qty": 300, "PerDevice": 3900.0}, {"Payment Month": "Feb'26", "State": "CG", "Vendor": "Roadpoint Limited", "Qty": 400, "PerDevice": 8550.0}, {"Payment Month": "Feb'26", "State": "AP", "Vendor": "Roadpoint Limited", "Qty": 500, "PerDevice": 3400.0}, {"Payment Month": "Feb'26", "State": "Multi-State", "Vendor": "Markon Electronics Corporation Pvt Ltd", "Qty": 200, "PerDevice": 2700.0}, {"Payment Month": "Feb'26", "State": "Multi-State", "Vendor": "Markon Electronics Corporation Pvt Ltd", "Qty": 700, "PerDevice": 2700.0}, {"Payment Month": "Feb'26", "State": "Multi-State", "Vendor": "Markon Electronics Corporation Pvt Ltd", "Qty": 340, "PerDevice": 2700.0}, {"Payment Month": "Feb'26", "State": "Multi-State", "Vendor": "Markon Electronics Corporation Pvt Ltd", "Qty": 1000, "PerDevice": 2700.0}, {"Payment Month": "Feb'26", "State": "Multi-State", "Vendor": "Markon Electronics Corporation Pvt Ltd", "Qty": 50, "PerDevice": 2700.0}, {"Payment Month": "Feb'26", "State": "GJ", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 50, "PerDevice": 3800.0}, {"Payment Month": "Feb'26", "State": "GJ", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 10, "PerDevice": 3800.0}, {"Payment Month": "Feb'26", "State": "GJ", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 10, "PerDevice": 3800.0}, {"Payment Month": "Feb'26", "State": "GJ", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 10, "PerDevice": 3800.0}, {"Payment Month": "Feb'26", "State": "GJ", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 10, "PerDevice": 3800.0}, {"Payment Month": "Feb'26", "State": "GJ", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 10, "PerDevice": 3800.0}, {"Payment Month": "Feb'26", "State": "GJ", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 10, "PerDevice": 3800.0}, {"Payment Month": "Feb'26", "State": "GJ", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 10, "PerDevice": 3800.0}, {"Payment Month": "Feb'26", "State": "GJ", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 10, "PerDevice": 3800.0}, {"Payment Month": "Feb'26", "State": "GJ", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 10, "PerDevice": 3800.0}, {"Payment Month": "Feb'26", "State": "GJ", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 10, "PerDevice": 3800.0}, {"Payment Month": "Feb'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 200, "PerDevice": 5276.0}, {"Payment Month": "Feb'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 200, "PerDevice": 1800.0}, {"Payment Month": "Feb'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 500, "PerDevice": 5276.0}, {"Payment Month": "Feb'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 500, "PerDevice": 1800.0}, {"Payment Month": "Feb'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 100, "PerDevice": 5276.0}, {"Payment Month": "Feb'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 100, "PerDevice": 1800.0}, {"Payment Month": "Feb'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 200, "PerDevice": 5276.0}, {"Payment Month": "Feb'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 200, "PerDevice": 1800.0}, {"Payment Month": "Feb'26", "State": "UP", "Vendor": "Naya Bharat Engineering Private Limited", "Qty": 500, "PerDevice": 8000.0}, {"Payment Month": "Feb'26", "State": "UP", "Vendor": "Naya Bharat Engineering Private Limited", "Qty": 1000, "PerDevice": 8000.0}, {"Payment Month": "Feb'26", "State": "UP", "Vendor": "Naya Bharat Engineering Private Limited", "Qty": 500, "PerDevice": 8000.0}, {"Payment Month": "Feb'26", "State": "MH", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 500, "PerDevice": 8500.0}, {"Payment Month": "Feb'26", "State": "MH", "Vendor": "RDM ENTERPRISES PRIVATE LIMITED", "Qty": 500, "PerDevice": 9550.0}, {"Payment Month": "Feb'26", "State": "GJ", "Vendor": "Roadpoint Limited", "Qty": 60, "PerDevice": 3900.0}, {"Payment Month": "Feb'26", "State": "GJ", "Vendor": "Roadpoint Limited", "Qty": 460, "PerDevice": 3900.0}, {"Payment Month": "Feb'26", "State": "MH", "Vendor": "RDM ENTERPRISES PRIVATE LIMITED", "Qty": 500, "PerDevice": 9550.0}, {"Payment Month": "Feb'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 50, "PerDevice": 2750.0}, {"Payment Month": "Feb'26", "State": "CG", "Vendor": "RDM ENTERPRISES PRIVATE LIMITED", "Qty": 400, "PerDevice": 8550.0}, {"Payment Month": "Mar'26", "State": "MH", "Vendor": "RDM ENTERPRISES PRIVATE LIMITED", "Qty": 500, "PerDevice": 9550.0}, {"Payment Month": "Mar'26", "State": "Multi-State", "Vendor": "Markon Electronics Corporation Pvt Ltd", "Qty": 150, "PerDevice": 2700.0}, {"Payment Month": "Mar'26", "State": "AP", "Vendor": "Roadpoint Limited", "Qty": 300, "PerDevice": 3400.0}, {"Payment Month": "Mar'26", "State": "GJ", "Vendor": "Roadpoint Limited", "Qty": 500, "PerDevice": 3900.0}, {"Payment Month": "Mar'26", "State": "MH", "Vendor": "R K ENTERPRISES", "Qty": 500, "PerDevice": 9500.0}, {"Payment Month": "Mar'26", "State": "UP", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 30, "PerDevice": 6500.0}, {"Payment Month": "Mar'26", "State": "UP", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 30, "PerDevice": 6500.0}, {"Payment Month": "Mar'26", "State": "UP", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 30, "PerDevice": 6500.0}, {"Payment Month": "Mar'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 20, "PerDevice": 2750.0}, {"Payment Month": "Mar'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 20, "PerDevice": 2750.0}, {"Payment Month": "Mar'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 10, "PerDevice": 2750.0}, {"Payment Month": "Mar'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 10, "PerDevice": 2750.0}, {"Payment Month": "Mar'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 20, "PerDevice": 2750.0}, {"Payment Month": "Mar'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 20, "PerDevice": 2750.0}, {"Payment Month": "Mar'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 50, "PerDevice": 2750.0}, {"Payment Month": "Apr'26", "State": "UP", "Vendor": "Naya Bharat Engineering Private Limited", "Qty": 1000, "PerDevice": 8000.0}, {"Payment Month": "Apr'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 1, "PerDevice": 2750.0}, {"Payment Month": "Apr'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 1, "PerDevice": 2750.0}, {"Payment Month": "Apr'26", "State": "Multi-State", "Vendor": "Markon Electronics Corporation Pvt Ltd", "Qty": 800, "PerDevice": 2700.0}, {"Payment Month": "Apr'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 500, "PerDevice": 2750.0}, {"Payment Month": "Apr'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 200, "PerDevice": 2750.0}, {"Payment Month": "Apr'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 50, "PerDevice": 2750.0}, {"Payment Month": "Apr'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 300, "PerDevice": 2750.0}, {"Payment Month": "Apr'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 100, "PerDevice": 2750.0}, {"Payment Month": "Apr'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 100, "PerDevice": 2750.0}, {"Payment Month": "Apr'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 25, "PerDevice": 2750.0}, {"Payment Month": "Apr'26", "State": "Multi-State", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 300, "PerDevice": 2750.0}, {"Payment Month": "May'26", "State": "MH", "Vendor": "ENTOIC GREEN ENERGY PRIVATE LIMITED", "Qty": 500, "PerDevice": 9300.0}, {"Payment Month": "Apr'26", "State": "Multi-State", "Vendor": "Markon Electronics Corporation Pvt Ltd", "Qty": 500, "PerDevice": 2800.0}, {"Payment Month": "Apr'26", "State": "Multi-State", "Vendor": "Markon Electronics Corporation Pvt Ltd", "Qty": 1500, "PerDevice": 2800.0}, {"Payment Month": "May'26", "State": "AP", "Vendor": "Roadpoint Limited", "Qty": 500, "PerDevice": 3400.0}, {"Payment Month": "May'26", "State": "CG", "Vendor": "Roadpoint Limited", "Qty": 300, "PerDevice": 8450.0}, {"Payment Month": "May'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 300, "PerDevice": 5022.0}, {"Payment Month": "May'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 300, "PerDevice": 1800.0}, {"Payment Month": "May'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 500, "PerDevice": 5022.0}, {"Payment Month": "May'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 500, "PerDevice": 1800.0}, {"Payment Month": "May'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 200, "PerDevice": 5022.0}, {"Payment Month": "May'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 200, "PerDevice": 1800.0}, {"Payment Month": "May'26", "State": "MH", "Vendor": "WATSOO EXPRESS PVT. LTD.", "Qty": 1197, "PerDevice": 8500.0}, {"Payment Month": "Apr'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 100, "PerDevice": 5022.0}, {"Payment Month": "Apr'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 100, "PerDevice": 1800.0}, {"Payment Month": "Apr'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 200, "PerDevice": 5022.0}, {"Payment Month": "Apr'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 200, "PerDevice": 1800.0}, {"Payment Month": "Apr'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 100, "PerDevice": 5022.0}, {"Payment Month": "Apr'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 100, "PerDevice": 1800.0}, {"Payment Month": "Apr'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 200, "PerDevice": 5022.0}, {"Payment Month": "Apr'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 200, "PerDevice": 1800.0}, {"Payment Month": "Apr'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 100, "PerDevice": 5022.0}, {"Payment Month": "Apr'26", "State": "KA", "Vendor": "A V SOLUTIONS", "Qty": 100, "PerDevice": 1800.0}, {"Payment Month": "Apr'26", "State": "Multi-State", "Vendor": "RDM ENTERPRISES PRIVATE LIMITED", "Qty": 100, "PerDevice": 2750.0}, {"Payment Month": "Apr'26", "State": "MH", "Vendor": "RDM ENTERPRISES PRIVATE LIMITED", "Qty": 1000, "PerDevice": 9500.0}, {"Payment Month": "Apr'26", "State": "GOA", "Vendor": "RDM ENTERPRISES PRIVATE LIMITED", "Qty": 50, "PerDevice": 2900.0}, {"Payment Month": "Apr'26", "State": "Multi-State", "Vendor": "RDM ENTERPRISES PRIVATE LIMITED", "Qty": 200, "PerDevice": 2750.0}, {"Payment Month": "Apr'26", "State": "CG", "Vendor": "RDM ENTERPRISES PRIVATE LIMITED", "Qty": 300, "PerDevice": 8550.0}, {"Payment Month": "Apr'26", "State": "KA", "Vendor": "RDM ENTERPRISES PRIVATE LIMITED", "Qty": 400, "PerDevice": 2750.0}];
+const MONTH_ORDER = ["Feb'26","Mar'26","Apr'26","May'26"];
+const fmt = n => n == null ? '—' : Number(n).toLocaleString('en-IN');
+const fmtINR = n => n == null ? '—' : '₹' + Number(Math.round(n)).toLocaleString('en-IN');
+const fmtINR1 = n => n == null ? '—' : '₹' + Number(n).toLocaleString('en-IN',{maximumFractionDigits:0});
+
+function groupSum(arr, key) {
+  const m = new Map();
+  for (const r of arr) {
+    const k = r[key];
+    if (!m.has(k)) m.set(k, {sum:0, count:0, weightedSum:0});
+    const o = m.get(k); o.sum += r.Qty; o.count += 1;
+    o.weightedSum += (r.Qty * (r.PerDevice||0));
+  }
+  // weighted avg price
+  for (const [k,o] of m) { o.wavg = o.sum>0 ? o.weightedSum/o.sum : 0; }
+  return m;
+}
+
+// KPIs
+function renderKPIs() {
+  const total = DATA.reduce((s,r)=>s+r.Qty,0);
+  const totalValue = DATA.reduce((s,r)=>s + r.Qty * (r.PerDevice||0), 0);
+  const wavgPrice = total>0 ? totalValue/total : 0;
+  const states = new Set(DATA.map(r=>r.State)).size;
+  const vendors = new Set(DATA.map(r=>r.Vendor)).size;
+
+  // variance count
+  const groupKey = r => `${r['Payment Month']}|${r.State}|${r.Vendor}`;
+  const priceSets = new Map();
+  for (const r of DATA) {
+    const k = groupKey(r);
+    if (!priceSets.has(k)) priceSets.set(k, new Set());
+    priceSets.get(k).add(r.PerDevice);
+  }
+  let varianceGroups = 0;
+  for (const [,s] of priceSets) if (s.size>1) varianceGroups++;
+
+  const items = [
+    {label:'Total Quantity', value:fmt(total), sub:'units procured', accent:true},
+    {label:'Total Value', value:fmtINR(totalValue), sub:'qty × per device'},
+    {label:'Wtd-avg price', value:fmtINR(wavgPrice), sub:'per device'},
+    {label:'States · Vendors', value:`${states}·${vendors}`, sub:'unique entities'},
+    {label:'Price-variance flags', value:varianceGroups, sub:'vendor+state+month', warn:true},
+  ];
+  document.getElementById('kpis').innerHTML = items.map(k=>`
+    <div class="kpi ${k.accent?'accent':''} ${k.warn?'warn':''}">
+      <div class="label">${k.label}</div>
+      <div class="value">${k.value}</div>
+      <div class="sub">${k.sub}</div>
+    </div>`).join('');
+}
+
+// Chart defaults
+Chart.defaults.font.family = "'JetBrains Mono', monospace";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#6b6555';
+Chart.defaults.borderColor = '#d4cdb8';
+
+const INK = '#0f1419', ACCENT = '#c1432b', ACCENT2 = '#2d4a3a', WARN = '#b8862e';
+const PALETTE = ['#c1432b','#2d4a3a','#b8862e','#5a3a2e','#7a6a4e','#3a5050','#8e4a3a','#4a5a3a','#a06b3e','#3a4a5a','#6b4a5a'];
+
+function renderMonthChart() {
+  const g = groupSum(DATA,'Payment Month');
+  const labels = MONTH_ORDER.filter(m=>g.has(m));
+  const sums = labels.map(l=>g.get(l).sum);
+  const wavgs = labels.map(l=>Math.round(g.get(l).wavg));
+  new Chart(document.getElementById('monthChart'), {
+    type: 'bar',
+    data: { labels, datasets: [
+      {label:'Qty (sum)', data:sums, backgroundColor:ACCENT, borderRadius:0, barPercentage:0.55, yAxisID:'y'},
+      {label:'Wtd-avg price (₹)', data:wavgs, type:'line', borderColor:WARN, backgroundColor:WARN, borderWidth:2, pointRadius:5, pointBackgroundColor:'#fbf8f1', pointBorderWidth:2, tension:0.25, yAxisID:'y1'},
+    ]},
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:10}}},
+        tooltip:{backgroundColor:INK, padding:12,
+          callbacks:{label:c=>c.dataset.label.includes('price')?'₹'+fmt(c.parsed.y)+' / device':'Qty: '+fmt(c.parsed.y)}}},
+      scales:{
+        x:{ grid:{display:false}, ticks:{font:{size:12, weight:'600'}, color:INK}},
+        y:{ position:'left', grid:{color:'rgba(212,205,184,0.4)'}, ticks:{callback:v=>fmt(v)}, title:{display:true, text:'Qty sum', font:{size:10}}},
+        y1:{ position:'right', grid:{display:false}, ticks:{callback:v=>'₹'+fmt(v)}, title:{display:true, text:'Wtd-avg ₹/device', font:{size:10}}}
+      }
+    }
+  });
+}
+
+function renderStateChart() {
+  const g = groupSum(DATA,'State');
+  const sorted = [...g.entries()].sort((a,b)=>b[1].sum-a[1].sum);
+  const labels = sorted.map(e=>e[0]);
+  const sums = sorted.map(e=>e[1].sum);
+  new Chart(document.getElementById('stateChart'), {
+    type:'bar',
+    data:{ labels, datasets:[{label:'Qty', data:sums, backgroundColor:labels.map((_,i)=>PALETTE[i%PALETTE.length]), borderRadius:0, barPercentage:0.75}]},
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false},
+        tooltip:{backgroundColor:INK, padding:12,
+          callbacks:{label:c=>{
+            const o = g.get(c.label);
+            return ['Qty: '+fmt(o.sum), 'Invoices: '+o.count, 'Wtd-avg: ₹'+fmt(Math.round(o.wavg))];
+          }}}},
+      scales:{
+        x:{ grid:{color:'rgba(212,205,184,0.4)'}, ticks:{callback:v=>fmt(v)}},
+        y:{ grid:{display:false}, ticks:{font:{size:12, weight:'600'}, color:INK}}
+      }
+    }
+  });
+}
+
+function renderVendorChart() {
+  const g = groupSum(DATA,'Vendor');
+  const sorted = [...g.entries()].sort((a,b)=>b[1].sum-a[1].sum);
+  const labels = sorted.map(e=>e[0].length>30?e[0].slice(0,28)+'…':e[0]);
+  const sums = sorted.map(e=>e[1].sum);
+  const wavgs = sorted.map(e=>Math.round(e[1].wavg));
+  new Chart(document.getElementById('vendorChart'), {
+    type:'bar',
+    data:{ labels, datasets:[
+      {label:'Qty (sum)', data:sums, backgroundColor:ACCENT, borderRadius:0, barPercentage:0.55, yAxisID:'y', order:2},
+      {label:'Wtd-avg ₹/device', data:wavgs, type:'line', borderColor:WARN, backgroundColor:WARN, borderWidth:2, pointRadius:5, pointBackgroundColor:'#fbf8f1', pointBorderWidth:2, tension:0.2, yAxisID:'y1', order:1},
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:10}}},
+        tooltip:{backgroundColor:INK, padding:12,
+          callbacks:{title:c=>sorted[c[0].dataIndex][0],
+            label:c=>c.dataset.label.includes('price')?'₹'+fmt(c.parsed.y)+' / device':'Qty: '+fmt(c.parsed.y)}}},
+      scales:{
+        x:{ grid:{display:false}, ticks:{font:{size:10}, color:INK, autoSkip:false, maxRotation:50, minRotation:35}},
+        y:{ position:'left', grid:{color:'rgba(212,205,184,0.4)'}, ticks:{callback:v=>fmt(v)}, title:{display:true, text:'Qty sum', font:{size:10}}},
+        y1:{ position:'right', grid:{display:false}, ticks:{callback:v=>'₹'+fmt(v)}, title:{display:true, text:'₹/device (wtd avg)', font:{size:10}}}
+      }
+    }
+  });
+}
+
+function renderHeatmap() {
+  const months = MONTH_ORDER.filter(m=>DATA.some(r=>r['Payment Month']===m));
+  const states = [...new Set(DATA.map(r=>r.State))].sort((a,b)=>{
+    const sa = DATA.filter(r=>r.State===a).reduce((s,r)=>s+r.Qty,0);
+    const sb = DATA.filter(r=>r.State===b).reduce((s,r)=>s+r.Qty,0);
+    return sb-sa;
+  });
+  const matrix = {};
+  for (const r of DATA) {
+    const k = r.State+'|'+r['Payment Month'];
+    if (!matrix[k]) matrix[k] = {sum:0,count:0};
+    matrix[k].sum += r.Qty; matrix[k].count += 1;
+  }
+  let maxVal = 0;
+  for (const k in matrix) if (matrix[k].sum>maxVal) maxVal = matrix[k].sum;
+
+  let html = '<table class="heatmap"><thead><tr><th>State</th>';
+  for (const m of months) html += `<th>${m}</th>`;
+  html += '<th>Total</th></tr></thead><tbody>';
+  for (const s of states) {
+    let rowSum = 0;
+    html += `<tr><td>${s}</td>`;
+    for (const m of months) {
+      const c = matrix[s+'|'+m];
+      if (c) {
+        const intensity = c.sum/maxVal;
+        const bg = `rgba(193,67,43,${(0.08 + intensity*0.75).toFixed(3)})`;
+        const txtColor = intensity>0.55 ? '#fbf8f1' : '#0f1419';
+        html += `<td class="cell" style="background:${bg};color:${txtColor}">${fmt(c.sum)}<span class="count">${c.count} inv</span></td>`;
+        rowSum += c.sum;
+      } else {
+        html += `<td style="color:#c5bea8">·</td>`;
+      }
+    }
+    html += `<td style="font-weight:700;background:#ebe6da">${fmt(rowSum)}</td></tr>`;
+  }
+  html += '</tbody></table>';
+  document.getElementById('heatmap').innerHTML = html;
+}
+
+// VARIANCE PANEL
+function getVarianceGroups() {
+  const groups = new Map();
+  for (const r of DATA) {
+    const k = r['Payment Month']+'|'+r.State+'|'+r.Vendor;
+    if (!groups.has(k)) groups.set(k, {month:r['Payment Month'], state:r.State, vendor:r.Vendor, prices:new Map()});
+    const g = groups.get(k);
+    if (!g.prices.has(r.PerDevice)) g.prices.set(r.PerDevice, 0);
+    g.prices.set(r.PerDevice, g.prices.get(r.PerDevice) + r.Qty);
+  }
+  const varGroups = [];
+  for (const [, g] of groups) {
+    if (g.prices.size > 1) {
+      const arr = [...g.prices.entries()].sort((a,b)=>a[0]-b[0]);
+      g.priceList = arr;
+      const lo = arr[0][0], hi = arr[arr.length-1][0];
+      g.delta = hi - lo;
+      g.pct = lo>0 ? (g.delta/lo)*100 : 0;
+      varGroups.push(g);
+    }
+  }
+  varGroups.sort((a,b)=>b.pct-a.pct);
+  return varGroups;
+}
+
+function renderVariancePanel() {
+  const vg = getVarianceGroups();
+  let html = `<h3>${vg.length} group${vg.length!==1?'s':''} with multiple per-device prices</h3>
+    <div class="lead">When the same vendor billed the same state in the same month at different unit prices — usually because of different SKUs (device + e-sim, hardware tiers), but worth confirming.</div>`;
+  if (vg.length === 0) {
+    html += '<div style="font-family:JetBrains Mono,monospace;font-size:12px;color:var(--muted)">No price variance found — every vendor+state+month combination has a single per-device rate.</div>';
+  } else {
+    html += '<div class="variance-list">';
+    for (const g of vg) {
+      const chips = g.priceList.map(([p,q]) =>
+        `<span class="pchip">${fmtINR(p)}<span class="qty">× ${fmt(q)}</span></span>`
+      ).join('');
+      html += `<div class="variance-item">
+        <div class="who">${g.vendor}</div>
+        <div class="when">${g.month} · ${g.state}</div>
+        <div class="prices">${chips}</div>
+        <div class="delta">Δ ${fmtINR(g.delta)} / device <span class="pct">(+${g.pct.toFixed(1)}% vs lowest)</span></div>
+      </div>`;
+    }
+    html += '</div>';
+  }
+  document.getElementById('variancePanel').innerHTML = html;
+}
+
+// PICKER + DETAIL with price stack
+function renderPicker() {
+  const g = groupSum(DATA,'State');
+  const sorted = [...g.entries()].sort((a,b)=>b[1].sum-a[1].sum);
+  const picker = document.getElementById('picker');
+  for (const [s, info] of sorted) {
+    const btn = document.createElement('button');
+    btn.className = 'chip';
+    btn.dataset.state = s;
+    btn.innerHTML = `${s}<span class="qty">${fmt(info.sum)}</span>`;
+    btn.onclick = () => selectState(s);
+    picker.appendChild(btn);
+  }
+  selectState(sorted[0][0]);
+}
+
+function selectState(state) {
+  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active', c.dataset.state===state));
+  const rows = DATA.filter(r=>r.State===state);
+  const months = MONTH_ORDER.filter(m=>rows.some(r=>r['Payment Month']===m));
+  const vendors = [...new Set(rows.map(r=>r.Vendor))].sort((a,b)=>{
+    const sa = rows.filter(r=>r.Vendor===a).reduce((s,r)=>s+r.Qty,0);
+    const sb = rows.filter(r=>r.Vendor===b).reduce((s,r)=>s+r.Qty,0);
+    return sb-sa;
+  });
+
+  // Build cell map: vendor|month -> { priceMap: Map(price->qty), count, totalQty }
+  const cells = {};
+  for (const r of rows) {
+    const k = r.Vendor+'|'+r['Payment Month'];
+    if (!cells[k]) cells[k] = {priceMap:new Map(), count:0, totalQty:0, weightedSum:0};
+    const c = cells[k];
+    if (!c.priceMap.has(r.PerDevice)) c.priceMap.set(r.PerDevice, {qty:0, count:0});
+    const pe = c.priceMap.get(r.PerDevice);
+    pe.qty += r.Qty; pe.count += 1;
+    c.count += 1; c.totalQty += r.Qty; c.weightedSum += r.Qty * (r.PerDevice||0);
+  }
+
+  const totalQty = rows.reduce((s,r)=>s+r.Qty,0);
+  const totalCnt = rows.length;
+  const totalValue = rows.reduce((s,r)=>s + r.Qty*(r.PerDevice||0), 0);
+  const stateWavg = totalQty>0 ? totalValue/totalQty : 0;
+  let variantCount = 0;
+  for (const k in cells) if (cells[k].priceMap.size>1) variantCount++;
+
+  let html = `<div class="state-detail-header">
+    <h3><span class="code">§</span>${state}</h3>
+    <div class="totals">
+      <strong>${fmt(totalQty)}</strong> units<span class="sep">•</span>
+      <strong>${totalCnt}</strong> invoices<span class="sep">•</span>
+      <strong>${vendors.length}</strong> vendors<span class="sep">•</span>
+      <strong>${fmtINR(stateWavg)}</strong> wtd-avg<span class="sep">•</span>
+      <strong>${variantCount}</strong> variance cells
+    </div>
+  </div>`;
+  html += `<div class="caption">Vendor × month — invoice count (n), unit price stack (₹/device × units at that price), and quantity total (Σ). Highlighted cells flag multiple prices in the same group.</div>`;
+  html += `<div class="legend">
+    <div class="item"><span class="sw uniform"></span> single price in the cell</div>
+    <div class="item"><span class="sw var"></span> multiple prices — each listed; weighted average shown</div>
+  </div>`;
+
+  html += '<div class="table-wrap"><table class="detail-table"><thead>';
+  html += '<tr><th class="vendor-col" rowspan="2">Vendor</th>';
+  months.forEach((m,i)=>{ html += `<th class="month-group" colspan="3">${m}</th>`; });
+  html += '<th class="month-group" colspan="3">Total</th></tr>';
+  html += '<tr>';
+  months.forEach((m,i)=>{ html += `<th class="sub ${i===0?'first':''}">n</th><th class="sub">₹ / device</th><th class="sub">Σ qty</th>`; });
+  html += `<th class="sub first">n</th><th class="sub">wtd ₹/dev</th><th class="sub">Σ qty</th>`;
+  html += '</tr></thead><tbody>';
+
+  const colTotals = {};
+  for (const m of months) colTotals[m] = {sum:0, count:0, weightedSum:0};
+  let grandSum = 0, grandCnt = 0, grandWeighted = 0;
+
+  for (const v of vendors) {
+    let rowSum = 0, rowCnt = 0, rowWeighted = 0;
+    html += `<tr><td class="vendor">${v}</td>`;
+    months.forEach((m,i)=>{
+      const c = cells[v+'|'+m];
+      const firstCls = i===0?'first':'';
+      if (c) {
+        const priceArr = [...c.priceMap.entries()].sort((a,b)=>b[0]-a[0]);
+        const isVar = priceArr.length > 1;
+        const varCls = isVar ? 'has-variance' : '';
+
+        // count cell
+        html += `<td class="${firstCls} ${varCls}">${c.count}</td>`;
+
+        // price stack cell
+        let priceCell = `<div class="price-stack ${isVar?'multi':''}">`;
+        for (const [price, info] of priceArr) {
+          priceCell += `<div class="price-row"><span class="price">${fmtINR(price)}</span><span class="units">× ${fmt(info.qty)}</span></div>`;
+        }
+        if (isVar) {
+          const wavg = c.weightedSum / c.totalQty;
+          priceCell += `<div class="wavg">wavg ${fmtINR(wavg)}</div>`;
+        }
+        priceCell += `</div>`;
+        html += `<td class="${varCls}">${priceCell}</td>`;
+
+        // qty cell
+        let qtyCell = `<div class="qty-stack">`;
+        if (isVar) {
+          for (const [price, info] of priceArr) {
+            qtyCell += `<div class="qrow muted">${fmt(info.qty)}</div>`;
+          }
+          qtyCell += `<div class="qtotal">${fmt(c.totalQty)}</div>`;
+        } else {
+          qtyCell += `<div class="qrow" style="font-weight:600">${fmt(c.totalQty)}</div>`;
+        }
+        qtyCell += `</div>`;
+        html += `<td class="${varCls}">${qtyCell}</td>`;
+
+        rowSum += c.totalQty; rowCnt += c.count; rowWeighted += c.weightedSum;
+        colTotals[m].sum += c.totalQty; colTotals[m].count += c.count; colTotals[m].weightedSum += c.weightedSum;
+      } else {
+        html += `<td class="zero ${firstCls}">·</td><td class="zero">·</td><td class="zero">·</td>`;
+      }
+    });
+    const rowWavg = rowSum>0 ? rowWeighted/rowSum : 0;
+    html += `<td class="first" style="font-weight:600">${rowCnt}</td>`;
+    html += `<td style="font-weight:600">${fmtINR(rowWavg)}</td>`;
+    html += `<td style="font-weight:600">${fmt(rowSum)}</td>`;
+    html += '</tr>';
+    grandSum += rowSum; grandCnt += rowCnt; grandWeighted += rowWeighted;
+  }
+
+  html += '</tbody><tfoot><tr><td class="vendor">Total</td>';
+  months.forEach((m,i)=>{
+    const ct = colTotals[m];
+    const wavg = ct.sum>0 ? ct.weightedSum/ct.sum : 0;
+    html += `<td class="${i===0?'first':''}">${ct.count}</td><td>${fmtINR(wavg)}</td><td>${fmt(ct.sum)}</td>`;
+  });
+  const grandWavg = grandSum>0 ? grandWeighted/grandSum : 0;
+  html += `<td class="first">${grandCnt}</td><td>${fmtINR(grandWavg)}</td><td>${fmt(grandSum)}</td>`;
+  html += '</tr></tfoot></table></div>';
+
+  document.getElementById('stateDetail').innerHTML = html;
+}
+
+document.getElementById('gen-date').textContent =
+  new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
+renderKPIs();
+renderMonthChart();
+renderStateChart();
+renderVendorChart();
+renderHeatmap();
+renderVariancePanel();
+renderPicker();
+</script>
+</body>
+</html>
