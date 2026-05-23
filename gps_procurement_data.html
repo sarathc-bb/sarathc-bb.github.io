@@ -167,6 +167,16 @@
   }
   .chip .qty { margin-left: 8px; opacity: 0.6; font-size: 10px; }
 
+  .month-picker { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0 18px; }
+  .mchip {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    padding: 6px 12px; background: var(--cream); border: 1px solid var(--rule);
+    cursor: pointer; letter-spacing: 0.05em; transition: all 0.18s ease; color: var(--ink); font-weight: 500;
+  }
+  .mchip:hover { background: var(--paper-2); }
+  .mchip.active { background: var(--accent-2); color: var(--paper); border-color: var(--accent-2); }
+  .mchip.all { font-style: italic; }
+
   .state-detail { background: var(--cream); border: 1px solid var(--rule); padding: 32px; box-shadow: var(--shadow); }
   .state-detail-header {
     display: flex; align-items: baseline; justify-content: space-between;
@@ -209,7 +219,7 @@
   table.detail-table thead th.sub.first { border-left: 1px solid var(--rule); }
   table.detail-table tbody td {
     padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--rule);
-    font-variant-numeric: tabular-nums; vertical-align: top;
+    font-variant-numeric: tabular-nums; vertical-align: top; height: 1px;
   }
   table.detail-table tbody td.vendor {
     text-align: left; font-family: 'Inter Tight', sans-serif;
@@ -225,7 +235,7 @@
   table.detail-table tbody tr:hover td.has-variance { background: rgba(184,134,46,0.18); }
 
   /* PRICE STACK inside cells */
-  .price-stack { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+  .price-stack { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; height: 100%; }
   .price-row {
     display: flex; gap: 8px; align-items: baseline; font-size: 11px;
     font-variant-numeric: tabular-nums;
@@ -234,7 +244,7 @@
   .price-row .units { color: var(--muted); font-size: 10px; }
   .price-stack.multi .price-row + .price-row { border-top: 1px dotted rgba(184,134,46,0.5); padding-top: 4px; }
   .price-stack .wavg {
-    margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--warn);
+    margin-top: auto; padding-top: 4px; border-top: 1px solid var(--warn);
     font-size: 10px; color: var(--warn); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
   }
   .qty-stack { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
@@ -253,6 +263,12 @@
     text-align: left; font-family: 'Fraunces', serif; font-style: italic; font-weight: 500; font-size: 13px;
   }
   table.detail-table tfoot td.first { border-left: 1px solid var(--ink); }
+  table.detail-table tfoot tr.tpp-row td {
+    border-top: 1px solid var(--rule); background: var(--cream); color: var(--accent);
+  }
+  table.detail-table tfoot tr.tpp-row td.vendor {
+    color: var(--ink); font-style: italic;
+  }
 
   /* HEATMAP */
   .heatmap-wrap { overflow-x: auto; }
@@ -340,6 +356,18 @@
 
   <div class="section-head">
     <span class="num">§ 02</span>
+    <h2>State drill-down</h2>
+    <span class="desc">Pick a state to see its vendor × month matrix with rates</span>
+  </div>
+
+  <div class="picker-row" id="picker">
+    <span class="picker-label">Select state →</span>
+  </div>
+
+  <div class="state-detail" id="stateDetail"></div>
+
+  <div class="section-head">
+    <span class="num">§ 03</span>
     <h2>Three lenses on the same total</h2>
     <span class="desc">Quantity (sum) split by month, by state and by vendor</span>
   </div>
@@ -368,24 +396,12 @@
   </div>
 
   <div class="section-head">
-    <span class="num">§ 03</span>
+    <span class="num">§ 04</span>
     <h2>Price variance flags</h2>
     <span class="desc">Same vendor + state + month with multiple per-device prices</span>
   </div>
 
   <div class="variance-panel" id="variancePanel"></div>
-
-  <div class="section-head">
-    <span class="num">§ 04</span>
-    <h2>State drill-down</h2>
-    <span class="desc">Pick a state to see its vendor × month matrix with per-device prices</span>
-  </div>
-
-  <div class="picker-row" id="picker">
-    <span class="picker-label">Select state →</span>
-  </div>
-
-  <div class="state-detail" id="stateDetail"></div>
 
   <footer class="footer">
     <span>BlackBuck Services Finance — Procurement Analytics</span>
@@ -637,10 +653,33 @@ function renderPicker() {
   selectState(sorted[0][0]);
 }
 
+let currentState = null;
+let activeMonths = null; // Set of selected months, or null = all available
+
 function selectState(state) {
+  currentState = state;
+  activeMonths = null; // reset month filter when switching state
+  renderDetail();
+}
+
+function toggleMonth(m) {
+  const allM = MONTH_ORDER.filter(mo=>DATA.some(r=>r.State===currentState && r['Payment Month']===mo));
+  if (activeMonths === null) activeMonths = new Set(allM);
+  if (activeMonths.has(m)) activeMonths.delete(m); else activeMonths.add(m);
+  if (activeMonths.size === 0) activeMonths = null; // never empty -> revert to all
+  renderDetail();
+}
+
+function showAllMonths() { activeMonths = null; renderDetail(); }
+
+function renderDetail() {
+  const state = currentState;
   document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active', c.dataset.state===state));
-  const rows = DATA.filter(r=>r.State===state);
-  const months = MONTH_ORDER.filter(m=>rows.some(r=>r['Payment Month']===m));
+  const allRows = DATA.filter(r=>r.State===state);
+  const allMonths = MONTH_ORDER.filter(m=>allRows.some(r=>r['Payment Month']===m));
+  const sel = activeMonths===null ? new Set(allMonths) : activeMonths;
+  const months = allMonths.filter(m=>sel.has(m));
+  const rows = allRows.filter(r=>sel.has(r['Payment Month']));
   const vendors = [...new Set(rows.map(r=>r.Vendor))].sort((a,b)=>{
     const sa = rows.filter(r=>r.Vendor===a).reduce((s,r)=>s+r.Qty,0);
     const sb = rows.filter(r=>r.Vendor===b).reduce((s,r)=>s+r.Qty,0);
@@ -676,19 +715,26 @@ function selectState(state) {
       <strong>${variantCount}</strong> variance cells
     </div>
   </div>`;
-  html += `<div class="caption">Vendor × month — invoice count (n), unit price stack (₹/device × units at that price), and quantity total (Σ). Highlighted cells flag multiple prices in the same group.</div>`;
+  html += `<div class="caption">Vendor × month — invoice count (n), Rate in ₹ (weighted average shown as wavg), and quantity total (Σ qty). Highlighted cells flag multiple rates in the same group.</div>`;
   html += `<div class="legend">
     <div class="item"><span class="sw uniform"></span> single price in the cell</div>
     <div class="item"><span class="sw var"></span> multiple prices — each listed; weighted average shown</div>
   </div>`;
 
+  const allSelected = months.length === allMonths.length;
+  html += `<div class="month-picker"><span class="picker-label">Months →</span>`;
+  html += `<button class="mchip all ${allSelected?'active':''}" data-all="1">All</button>`;
+  for (const m of allMonths) {
+    html += `<button class="mchip ${sel.has(m)?'active':''}" data-month="${m}">${m}</button>`;
+  }
+  html += `</div>`;
+
   html += '<div class="table-wrap"><table class="detail-table"><thead>';
   html += '<tr><th class="vendor-col" rowspan="2">Vendor</th>';
   months.forEach((m,i)=>{ html += `<th class="month-group" colspan="3">${m}</th>`; });
-  html += '<th class="month-group" colspan="3">Total</th></tr>';
+  html += '</tr>';
   html += '<tr>';
-  months.forEach((m,i)=>{ html += `<th class="sub ${i===0?'first':''}">n</th><th class="sub">₹ / device</th><th class="sub">Σ qty</th>`; });
-  html += `<th class="sub first">n</th><th class="sub">wtd ₹/dev</th><th class="sub">Σ qty</th>`;
+  months.forEach((m,i)=>{ html += `<th class="sub ${i===0?'first':''}">n</th><th class="sub">Rate</th><th class="sub">Σ qty</th>`; });
   html += '</tr></thead><tbody>';
 
   const colTotals = {};
@@ -709,15 +755,13 @@ function selectState(state) {
         // count cell
         html += `<td class="${firstCls} ${varCls}">${c.count}</td>`;
 
-        // price stack cell
-        let priceCell = `<div class="price-stack ${isVar?'multi':''}">`;
+        // rate cell — rate(s) listed first, then weighted-average rate (shown for every cell)
+        const cellWavg = c.totalQty>0 ? c.weightedSum / c.totalQty : 0;
+        let priceCell = `<div class="price-stack ${isVar?'multi':'solo'}">`;
         for (const [price, info] of priceArr) {
-          priceCell += `<div class="price-row"><span class="price">${fmtINR(price)}</span><span class="units">× ${fmt(info.qty)}</span></div>`;
+          priceCell += `<div class="price-row"><span class="price">${fmtINR(price)}</span></div>`;
         }
-        if (isVar) {
-          const wavg = c.weightedSum / c.totalQty;
-          priceCell += `<div class="wavg">wavg ${fmtINR(wavg)}</div>`;
-        }
+        priceCell += `<div class="wavg">wavg ${fmtINR(cellWavg)}</div>`;
         priceCell += `</div>`;
         html += `<td class="${varCls}">${priceCell}</td>`;
 
@@ -740,25 +784,32 @@ function selectState(state) {
         html += `<td class="zero ${firstCls}">·</td><td class="zero">·</td><td class="zero">·</td>`;
       }
     });
-    const rowWavg = rowSum>0 ? rowWeighted/rowSum : 0;
-    html += `<td class="first" style="font-weight:600">${rowCnt}</td>`;
-    html += `<td style="font-weight:600">${fmtINR(rowWavg)}</td>`;
-    html += `<td style="font-weight:600">${fmt(rowSum)}</td>`;
     html += '</tr>';
-    grandSum += rowSum; grandCnt += rowCnt; grandWeighted += rowWeighted;
   }
 
-  html += '</tbody><tfoot><tr><td class="vendor">Total</td>';
+  html += '</tbody><tfoot>';
+  // Total row — invoice count, weighted-avg rate, Σ qty per month
+  html += '<tr><td class="vendor">Total</td>';
   months.forEach((m,i)=>{
     const ct = colTotals[m];
     const wavg = ct.sum>0 ? ct.weightedSum/ct.sum : 0;
     html += `<td class="${i===0?'first':''}">${ct.count}</td><td>${fmtINR(wavg)}</td><td>${fmt(ct.sum)}</td>`;
   });
-  const grandWavg = grandSum>0 ? grandWeighted/grandSum : 0;
-  html += `<td class="first">${grandCnt}</td><td>${fmtINR(grandWavg)}</td><td>${fmt(grandSum)}</td>`;
-  html += '</tr></tfoot></table></div>';
+  html += '</tr>';
+  // Total Procurement Price row — Rate × Σ qty per month
+  html += '<tr class="tpp-row"><td class="vendor">Total Procurement Price</td>';
+  months.forEach((m,i)=>{
+    const ct = colTotals[m];
+    html += `<td class="${i===0?'first':''}" colspan="3">${fmtINR(ct.weightedSum)}</td>`;
+  });
+  html += '</tr>';
+  html += '</tfoot></table></div>';
 
-  document.getElementById('stateDetail').innerHTML = html;
+  const detailEl = document.getElementById('stateDetail');
+  detailEl.innerHTML = html;
+  detailEl.querySelectorAll('.mchip').forEach(b=>{
+    b.onclick = () => b.dataset.all ? showAllMonths() : toggleMonth(b.dataset.month);
+  });
 }
 
 document.getElementById('gen-date').textContent =
