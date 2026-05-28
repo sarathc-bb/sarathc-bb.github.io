@@ -1,427 +1,407 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>LTV Summary Dashboard</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+<meta charset="utf-8">
+<title>NR Report — LTV Summary Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-:root {
-  --bg: #f5f7fb;
-  --card: #ffffff;
-  --ink: #1f2937;
-  --muted: #6b7280;
-  --line: #e5e7eb;
-  --accent: #2563eb;
-  --accent-2: #7c3aed;
-  --green: #059669;
-  --orange: #ea580c;
-  --gray-fill: #f3f4f6;
-  --shadow: 0 1px 3px rgba(17,24,39,.06), 0 1px 2px rgba(17,24,39,.04);
-}
-* { box-sizing: border-box; }
-body {
-  margin: 0; padding: 24px 32px 64px;
-  background: var(--bg);
-  color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  font-size: 14px;
-  line-height: 1.45;
-}
-header {
-  display: flex; justify-content: space-between; align-items: flex-end;
-  padding-bottom: 16px;
-  margin-bottom: 20px;
-  border-bottom: 1px solid var(--line);
-}
-header h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
-header .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
-header .meta { color: var(--muted); font-size: 12px; text-align: right; }
+  :root {
+    --bg:#f7f8fa;
+    --surface:#ffffff;
+    --ink:#0f172a;
+    --ink-soft:#334155;
+    --muted:#64748b;
+    --muted-2:#94a3b8;
+    --line:#e2e8f0;
+    --line-soft:#eef2f6;
+    --accent:#2563eb;
+    --accent-soft:#dbeafe;
+    --shadow: 0 1px 2px rgba(15,23,42,.04), 0 1px 3px rgba(15,23,42,.06);
+    --shadow-lg: 0 4px 6px -1px rgba(15,23,42,.06), 0 2px 4px -2px rgba(15,23,42,.04);
+    --radius: 10px;
+    --radius-sm: 8px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    font-feature-settings:"cv11","ss01";
+  }
+  .wrap{max-width:1280px;margin:0 auto;padding:28px 32px 56px}
 
-.filters {
-  display: flex; gap: 14px; align-items: end; flex-wrap: wrap;
-  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
-  padding: 16px 18px; margin-bottom: 20px; box-shadow: var(--shadow);
-}
-.filter-group { display: flex; flex-direction: column; gap: 6px; min-width: 180px; }
-.filter-group label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-.filter-group select {
-  appearance: none; padding: 8px 30px 8px 12px; border: 1px solid var(--line); border-radius: 8px;
-  background: #fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>") no-repeat right 10px center;
-  font-size: 13px; color: var(--ink); cursor: pointer;
-}
-.filter-group select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
-.filter-actions { margin-left: auto; display: flex; gap: 8px; }
-button.reset {
-  background: var(--gray-fill); border: 1px solid var(--line); color: var(--ink);
-  padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500;
-}
-button.reset:hover { background: #e9ebef; }
+  /* Header */
+  .header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px}
+  .header h1{font-size:20px;font-weight:600;letter-spacing:-0.01em;margin:0;color:var(--ink)}
+  .header .sub{color:var(--muted);font-size:13px;margin-top:4px}
+  .header .stamp{color:var(--muted-2);font-size:12px;text-align:right}
+  .header .stamp .src{color:var(--ink-soft);font-weight:500;font-size:12.5px}
 
-.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
-.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
-.kpi .label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-.kpi .value { font-size: 26px; font-weight: 700; margin-top: 6px; letter-spacing: -.01em; }
-.kpi .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
-.kpi::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent); }
-.kpi.k2::before { background: var(--accent-2); }
-.kpi.k3::before { background: var(--green); }
-.kpi.k4::before { background: var(--orange); }
+  /* Filter bar */
+  .filterbar{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 18px;
+    margin-bottom:20px;
+    box-shadow:var(--shadow);
+    display:flex;
+    gap:18px;
+    align-items:flex-end;
+    flex-wrap:wrap;
+  }
+  .filter{display:flex;flex-direction:column;gap:6px;min-width:200px;flex:1 1 200px;max-width:260px}
+  .filter label{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)}
+  .select-wrap{position:relative}
+  .filter select{
+    appearance:none;
+    width:100%;
+    padding:8px 32px 8px 12px;
+    border:1px solid var(--line);
+    border-radius:var(--radius-sm);
+    background:var(--surface);
+    color:var(--ink);
+    font-size:13.5px;
+    font-family:inherit;
+    cursor:pointer;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .filter select:hover{border-color:#cbd5e1}
+  .filter select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+  .select-wrap::after{
+    content:"";position:absolute;right:12px;top:50%;width:8px;height:8px;
+    border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);
+    transform:translateY(-70%) rotate(45deg);pointer-events:none;
+  }
+  .reset-btn{
+    margin-left:auto;
+    padding:8px 16px;
+    border:1px solid var(--line);
+    border-radius:var(--radius-sm);
+    background:var(--surface);
+    color:var(--ink-soft);
+    font-size:13px;
+    font-weight:500;
+    font-family:inherit;
+    cursor:pointer;
+    transition:all .15s;
+  }
+  .reset-btn:hover{background:#f1f5f9;color:var(--ink);border-color:#cbd5e1}
 
-.grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; margin-bottom: 20px; }
-.card {
-  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
-  padding: 16px 18px; box-shadow: var(--shadow); display: flex; flex-direction: column;
-}
-.card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
-.card h3 { margin: 0 0 4px; font-size: 14px; font-weight: 600; }
-.card .desc { color: var(--muted); font-size: 12px; margin-bottom: 14px; }
-.card .chart-wrap { position: relative; flex: 1; min-height: 0; }
-.col-4 { grid-column: span 4; }
-.col-6 { grid-column: span 6; }
-.col-8 { grid-column: span 8; }
-.col-12 { grid-column: span 12; }
-.h-260 { height: 260px; }
-.h-300 { height: 300px; }
-.h-440 { height: 440px; }
+  /* KPI cards */
+  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+  .kpi{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 18px;box-shadow:var(--shadow);
+  }
+  .kpi .lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);margin-bottom:6px}
+  .kpi .val{font-size:22px;font-weight:600;letter-spacing:-0.01em;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .kpi .sub{font-size:11.5px;color:var(--muted-2);margin-top:2px}
 
-.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-.chip {
-  border: 1px solid var(--line); background: #fff; color: var(--muted);
-  padding: 5px 11px; border-radius: 999px; font-size: 12px; cursor: pointer; font-weight: 500;
-  transition: all .12s ease;
-}
-.chip:hover { border-color: #c9cdd4; color: var(--ink); }
-.chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-.chip-mini {
-  border: 1px solid var(--line); background: var(--gray-fill); color: var(--muted);
-  padding: 3px 9px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 500;
-}
-.chip-mini:hover { background: #e9ebef; color: var(--ink); }
+  /* Charts row */
+  .chart-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+  .panel{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 20px;box-shadow:var(--shadow);
+  }
+  .panel .panel-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+  .panel .panel-title{font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-0.005em}
+  .panel .panel-sub{font-size:11px;color:var(--muted-2);text-transform:uppercase;letter-spacing:0.04em;font-weight:500}
+  .chart-box{position:relative;height:260px}
+
+  /* Table panel */
+  .table-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .table-panel .panel-head{padding:16px 20px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:baseline}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:9px 14px;text-align:left;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  thead th{
+    background:#fafbfc;font-weight:600;font-size:11px;text-transform:uppercase;
+    letter-spacing:0.05em;color:var(--muted);border-bottom:1px solid var(--line)
+  }
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  td.plan{background:#f8fafc;font-weight:600;color:var(--ink);border-right:1px solid var(--line-soft);font-size:12.5px}
+  td.sale{background:#fbfcfd;color:var(--ink-soft);border-right:1px solid var(--line-soft);font-size:12.5px}
+  tr.subtotal-sale td{background:#fcfcfd;color:var(--muted);font-size:12px;font-style:italic}
+  tr.subtotal-plan td{background:#f1f5f9;color:var(--ink);font-size:12.5px}
+  tfoot td{background:#f8fafc;color:var(--ink);font-weight:700;font-size:13px;border-top:2px solid var(--line)}
+  .empty{padding:48px;text-align:center;color:var(--muted)}
+
+  /* Filter summary line under header */
+  .filterline{font-size:12px;color:var(--muted);margin-top:6px}
+  .filterline code{background:#f1f5f9;padding:1px 7px;border-radius:4px;font-size:11.5px;color:var(--ink-soft);border:1px solid var(--line-soft)}
 </style>
 </head>
 <body>
-
-<header>
-  <div>
-    <h1>LTV Summary Dashboard</h1>
-    <div class="sub">Revenue by Plan_type &times; Channel &times; New_Type &mdash; filtered source data</div>
-  </div>
-  <div class="meta">
-    <div>Source: <strong>LTV Summary.xlsx</strong></div>
-    <div id="dataInfo"></div>
-  </div>
-</header>
-
-<div class="filters">
-  <div class="filter-group">
-    <label for="fPeriod">Subscription Period</label>
-    <select id="fPeriod"><option value="__ALL__">All</option></select>
-  </div>
-  <div class="filter-group">
-    <label for="fPlanCat">Plan Type</label>
-    <select id="fPlanCat"><option value="__ALL__">All</option></select>
-  </div>
-  <div class="filter-group">
-    <label for="fState">State</label>
-    <select id="fState"><option value="__ALL__">All</option></select>
-  </div>
-  <div class="filter-actions">
-    <button class="reset" id="resetBtn">Reset filters</button>
-  </div>
-</div>
-
-<div class="kpis">
-  <div class="kpi"><div class="label">Total Revenue</div><div class="value" id="kpiRevenue">&mdash;</div><div class="sub">Sum of Exclude Reley</div></div>
-  <div class="kpi k2"><div class="label">Plan_types</div><div class="value" id="kpiPlans">&mdash;</div><div class="sub">Distinct plan_types in view</div></div>
-  <div class="kpi k3"><div class="label">States Covered</div><div class="value" id="kpiStates">&mdash;</div><div class="sub">Distinct states (excl. NA)</div></div>
-  <div class="kpi k4"><div class="label">Avg per Plan_type</div><div class="value" id="kpiAvg">&mdash;</div><div class="sub">Revenue / Plan_type</div></div>
-</div>
-
-<div class="grid">
-  <div class="card col-4">
-    <h3>Revenue by Subscription Period</h3>
-    <div class="desc">Annual vs Biennial vs Monthly vs Triennial</div>
-    <div class="chart-wrap h-260"><canvas id="chartPeriod"></canvas></div>
-  </div>
-  <div class="card col-4">
-    <h3>Revenue by Plan Type</h3>
-    <div class="desc">AIS vs Non-AIS vs Fuel Sensor vs Wireless vs Other</div>
-    <div class="chart-wrap h-260"><canvas id="chartPlanCat"></canvas></div>
-  </div>
-  <div class="card col-4">
-    <h3>Revenue by Channel</h3>
-    <div class="desc">Sales channel breakdown</div>
-    <div class="chart-wrap h-260"><canvas id="chartChannel"></canvas></div>
-  </div>
-
-  <div class="card col-8">
-    <div class="card-head">
-      <div>
-        <h3>Top States by Revenue</h3>
-        <div class="desc">Top 15 states ranked by total Exclude Reley (NA excluded)</div>
-      </div>
+<div class="wrap">
+  <div class="header">
+    <div>
+      <h1>NR Report — LTV Summary</h1>
+      <div class="sub">Plan_type × Sale_type × New_Type breakdown with revenue analytics</div>
     </div>
-    <div class="chart-wrap h-440"><canvas id="chartStates"></canvas></div>
-  </div>
-  <div class="card col-4">
-    <div class="card-head">
-      <div>
-        <h3>Revenue by New_Type</h3>
-        <div class="desc">Toggle categories to include</div>
-      </div>
+    <div class="stamp">
+      <div class="src">LTV Summary Input.xlsx · NR Report to MN</div>
+      <div>Generated 28 May 2026</div>
     </div>
-    <div class="chips" id="newTypeChips"></div>
-    <div class="chart-wrap h-300"><canvas id="chartNewType"></canvas></div>
+  </div>
+
+  <div class="filterbar">
+    <div class="filter">
+      <label for="fPeriod">Subscription Period</label>
+      <div class="select-wrap"><select id="fPeriod"><option value="All">All</option></select></div>
+    </div>
+    <div class="filter">
+      <label for="fPlan">Plan Type</label>
+      <div class="select-wrap"><select id="fPlan"><option value="All">All</option></select></div>
+    </div>
+    <div class="filter">
+      <label for="fState">State</label>
+      <div class="select-wrap"><select id="fState"><option value="All">All</option></select></div>
+    </div>
+    <button class="reset-btn" id="resetBtn">Reset filters</button>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="lbl">Total Rows</div><div class="val" id="kRows">—</div><div class="sub">After base filters</div></div>
+    <div class="kpi"><div class="lbl">Total Revenue</div><div class="val" id="kSum">—</div><div class="sub">Sum of Exclude Reley</div></div>
+    <div class="kpi"><div class="lbl">Avg Revenue / Row</div><div class="val" id="kAvg">—</div><div class="sub">Mean Exclude Reley</div></div>
+    <div class="kpi"><div class="lbl">Summary Groups</div><div class="val" id="kGroups">—</div><div class="sub">Plan × Sale × Type</div></div>
+  </div>
+
+  <div class="chart-row">
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Revenue by Subscription Period</div>
+        <div class="panel-sub">Sum of Exclude Reley</div>
+      </div>
+      <div class="chart-box"><canvas id="chartPeriod"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Revenue by Plan Type</div>
+        <div class="panel-sub">Sum of Exclude Reley</div>
+      </div>
+      <div class="chart-box"><canvas id="chartPlan"></canvas></div>
+    </div>
+  </div>
+
+  <div class="table-panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Detailed Breakdown</div>
+        <div class="filterline">
+          Source filters: <code>Channel ∈ {Market, Tele, FSN, Toll}</code> ·
+          <code>Sale_type ∉ {Non_AIS_distributor, RMN_Change, Reactivation}</code>
+        </div>
+      </div>
+      <div class="panel-sub" id="tableNote">All filters: showing all rows</div>
+    </div>
+    <div id="tableHost"></div>
   </div>
 </div>
 
 <script>
-const DATA = [{"Plan_type":"ANNUAL AIS(Andhra Pradesh)","Channel":"0","New_Type":"Mining","amount":11998.24,"Period":"Annual","PlanCat":"AIS","State":"Andhra Pradesh"},{"Plan_type":"ANNUAL AIS(Andhra Pradesh)","Channel":"CP","New_Type":"Mining","amount":5999.12,"Period":"Annual","PlanCat":"AIS","State":"Andhra Pradesh"},{"Plan_type":"ANNUAL AIS(Andhra Pradesh)","Channel":"FSN","New_Type":"Mining","amount":5999.12,"Period":"Annual","PlanCat":"AIS","State":"Andhra Pradesh"},{"Plan_type":"ANNUAL AIS(Andhra Pradesh)","Channel":"Market","New_Type":"Mining","amount":948981.96,"Period":"Annual","PlanCat":"AIS","State":"Andhra Pradesh"},{"Plan_type":"ANNUAL AIS(Andhra Pradesh)","Channel":"Market","New_Type":"Non AIS","amount":5700.58,"Period":"Annual","PlanCat":"AIS","State":"Andhra Pradesh"},{"Plan_type":"ANNUAL AIS(Andhra Pradesh)","Channel":"Tele","New_Type":"Mining","amount":65591.48,"Period":"Annual","PlanCat":"AIS","State":"Andhra Pradesh"},{"Plan_type":"ANNUAL AIS(Bihar Mining)","Channel":"0","New_Type":"Mining","amount":185519.59999999966,"Period":"Annual","PlanCat":"AIS","State":"Bihar"},{"Plan_type":"ANNUAL AIS(Bihar Mining)","Channel":"CP","New_Type":"Mining","amount":53005.599999999904,"Period":"Annual","PlanCat":"AIS","State":"Bihar"},{"Plan_type":"ANNUAL AIS(Bihar Mining)","Channel":"Market","New_Type":"Mining","amount":5073135.059999991,"Period":"Annual","PlanCat":"AIS","State":"Bihar"},{"Plan_type":"ANNUAL AIS(Bihar Mining)","Channel":"Market","New_Type":"Non AIS","amount":26502.799999999952,"Period":"Annual","PlanCat":"AIS","State":"Bihar"},{"Plan_type":"ANNUAL AIS(Bihar Mining)","Channel":"Tele","New_Type":"Mining","amount":148307.11999999985,"Period":"Annual","PlanCat":"AIS","State":"Bihar"},{"Plan_type":"ANNUAL AIS(Bihar Mining)","Channel":"Toll","New_Type":"Mining","amount":27701.67999999997,"Period":"Annual","PlanCat":"AIS","State":"Bihar"},{"Plan_type":"ANNUAL AIS(Bihar)","Channel":"Market","New_Type":"Passing","amount":71499.73999999999,"Period":"Annual","PlanCat":"AIS","State":"Bihar"},{"Plan_type":"ANNUAL AIS(Bihar)","Channel":"Tele","New_Type":"Passing","amount":4900.53999999999,"Period":"Annual","PlanCat":"AIS","State":"Bihar"},{"Plan_type":"ANNUAL AIS(Delhi)","Channel":"Market","New_Type":"Passing","amount":17299.97999999999,"Period":"Annual","PlanCat":"AIS","State":"Delhi"},{"Plan_type":"ANNUAL AIS(Gujarat Mining)","Channel":"0","New_Type":"Mining","amount":73794.83999999995,"Period":"Annual","PlanCat":"AIS","State":"Gujarat"},{"Plan_type":"ANNUAL AIS(Gujarat Mining)","Channel":"CP","New_Type":"Mining","amount":21099.57999999999,"Period":"Annual","PlanCat":"AIS","State":"Gujarat"},{"Plan_type":"ANNUAL AIS(Gujarat Mining)","Channel":"Market","New_Type":"Mining","amount":2853340.2999999975,"Period":"Annual","PlanCat":"AIS","State":"Gujarat"},{"Plan_type":"ANNUAL AIS(Gujarat Mining)","Channel":"Tele","New_Type":"Mining","amount":78781.51999999987,"Period":"Annual","PlanCat":"AIS","State":"Gujarat"},{"Plan_type":"ANNUAL AIS(Haryana FCI)","Channel":"0","New_Type":"Mining","amount":145797.25999999998,"Period":"Annual","PlanCat":"AIS","State":"Haryana"},{"Plan_type":"ANNUAL AIS(Haryana FCI)","Channel":"CP","New_Type":"Mining","amount":30301.22,"Period":"Annual","PlanCat":"AIS","State":"Haryana"},{"Plan_type":"ANNUAL AIS(Haryana FCI)","Channel":"FSN","New_Type":"Mining","amount":12899.76,"Period":"Annual","PlanCat":"AIS","State":"Haryana"},{"Plan_type":"ANNUAL AIS(Haryana FCI)","Channel":"Market","New_Type":"Mining","amount":5827688.42,"Period":"Annual","PlanCat":"AIS","State":"Haryana"},{"Plan_type":"ANNUAL AIS(Haryana FCI)","Channel":"Market","New_Type":"Non AIS","amount":8599.84,"Period":"Annual","PlanCat":"AIS","State":"Haryana"},{"Plan_type":"ANNUAL AIS(Haryana FCI)","Channel":"Tele","New_Type":"Mining","amount":184695.9599999997,"Period":"Annual","PlanCat":"AIS","State":"Haryana"},{"Plan_type":"ANNUAL AIS(Haryana FCI)","Channel":"Toll","New_Type":"Mining","amount":9399.88,"Period":"Annual","PlanCat":"AIS","State":"Haryana"},{"Plan_type":"ANNUAL AIS(Jammu & Kashmir Mining)","Channel":"0","New_Type":"Mining","amount":5099.96,"Period":"Annual","PlanCat":"AIS","State":"Jammu & Kashmir"},{"Plan_type":"ANNUAL AIS(Jammu & Kashmir Mining)","Channel":"CP","New_Type":"Mining","amount":20399.84,"Period":"Annual","PlanCat":"AIS","State":"Jammu & Kashmir"},{"Plan_type":"ANNUAL AIS(Jammu & Kashmir Mining)","Channel":"FSN","New_Type":"Mining","amount":4400.22,"Period":"Annual","PlanCat":"AIS","State":"Jammu & Kashmir"},{"Plan_type":"ANNUAL AIS(Jammu & Kashmir Mining)","Channel":"Market","New_Type":"Mining","amount":2185230.2,"Period":"Annual","PlanCat":"AIS","State":"Jammu & Kashmir"},{"Plan_type":"ANNUAL AIS(Jammu & Kashmir Mining)","Channel":"Tele","New_Type":"Mining","amount":5099.96,"Period":"Annual","PlanCat":"AIS","State":"Jammu & Kashmir"},{"Plan_type":"ANNUAL AIS(Jammu & Kashmir)","Channel":"0","New_Type":"Passing","amount":21499.6,"Period":"Annual","PlanCat":"AIS","State":"Jammu & Kashmir"},{"Plan_type":"ANNUAL AIS(Jammu & Kashmir)","Channel":"CP","New_Type":"Passing","amount":94248.95999999999,"Period":"Annual","PlanCat":"AIS","State":"Jammu & Kashmir"},{"Plan_type":"ANNUAL AIS(Jammu & Kashmir)","Channel":"Tele","New_Type":"Passing","amount":10749.8,"Period":"Annual","PlanCat":"AIS","State":"Jammu & Kashmir"},{"Plan_type":"ANNUAL AIS(Karnataka Mining)","Channel":"Market","New_Type":"Mining","amount":19297.72,"Period":"Annual","PlanCat":"AIS","State":"Karnataka"},{"Plan_type":"ANNUAL AIS(Karnataka)","Channel":"0","New_Type":"Passing","amount":468153.19999999995,"Period":"Annual","PlanCat":"AIS","State":"Karnataka"},{"Plan_type":"ANNUAL AIS(Karnataka)","Channel":"CP","New_Type":"Passing","amount":5438632.9799999995,"Period":"Annual","PlanCat":"AIS","State":"Karnataka"},{"Plan_type":"ANNUAL AIS(Karnataka)","Channel":"FSN","New_Type":"Mining","amount":20378.6,"Period":"Annual","PlanCat":"AIS","State":"Karnataka"},{"Plan_type":"ANNUAL AIS(Karnataka)","Channel":"FSN","New_Type":"Passing","amount":1739874.5999999999,"Period":"Annual","PlanCat":"AIS","State":"Karnataka"},{"Plan_type":"ANNUAL AIS(Karnataka)","Channel":"Market","New_Type":"Mining","amount":8950.3,"Period":"Annual","PlanCat":"AIS","State":"Karnataka"},{"Plan_type":"ANNUAL AIS(Karnataka)","Channel":"Market","New_Type":"Non AIS","amount":8950.3,"Period":"Annual","PlanCat":"AIS","State":"Karnataka"},{"Plan_type":"ANNUAL AIS(Karnataka)","Channel":"Market","New_Type":"Passing","amount":6332458.199999998,"Period":"Annual","PlanCat":"AIS","State":"Karnataka"},{"Plan_type":"ANNUAL AIS(Karnataka)","Channel":"Tele","New_Type":"Passing","amount":232560.3,"Period":"Annual","PlanCat":"AIS","State":"Karnataka"},{"Plan_type":"ANNUAL AIS(Karnataka)","Channel":"Toll","New_Type":"Passing","amount":189879.69999999998,"Period":"Annual","PlanCat":"AIS","State":"Karnataka"},{"Plan_type":"ANNUAL AIS(Madhya Pradesh)","Channel":"Market","New_Type":"Mining","amount":12249.58,"Period":"Annual","PlanCat":"AIS","State":"Madhya Pradesh"},{"Plan_type":"ANNUAL AIS(Madhya Pradesh)","Channel":"Market","New_Type":"Passing","amount":570440.3199999989,"Period":"Annual","PlanCat":"AIS","State":"Madhya Pradesh"},{"Plan_type":"ANNUAL AIS(Maharashtra GNFC)","Channel":"0","New_Type":"Mining","amount":26994.85999999995,"Period":"Annual","PlanCat":"AIS","State":"Maharashtra"},{"Plan_type":"ANNUAL AIS(Maharashtra GNFC)","Channel":"CP","New_Type":"Mining","amount":4899.36,"Period":"Annual","PlanCat":"AIS","State":"Maharashtra"},{"Plan_type":"ANNUAL AIS(Maharashtra GNFC)","Channel":"FSN","New_Type":"Mining","amount":5498.79999999999,"Period":"Annual","PlanCat":"AIS","State":"Maharashtra"},{"Plan_type":"ANNUAL AIS(Maharashtra GNFC)","Channel":"Market","New_Type":"Mining","amount":2153923.6199999982,"Period":"Annual","PlanCat":"AIS","State":"Maharashtra"},{"Plan_type":"ANNUAL AIS(Maharashtra GNFC)","Channel":"Market","New_Type":"Non AIS","amount":4899.36,"Period":"Annual","PlanCat":"AIS","State":"Maharashtra"},{"Plan_type":"ANNUAL AIS(Maharashtra GNFC)","Channel":"Tele","New_Type":"Mining","amount":20196.87999999999,"Period":"Annual","PlanCat":"AIS","State":"Maharashtra"},{"Plan_type":"ANNUAL AIS(Maharashtra Mining)","Channel":"0","New_Type":"Mining","amount":89205.6399999999,"Period":"Annual","PlanCat":"AIS","State":"Maharashtra"},{"Plan_type":"ANNUAL AIS(Maharashtra Mining)","Channel":"CP","New_Type":"Mining","amount":5499.98,"Period":"Annual","PlanCat":"AIS","State":"Maharashtra"},{"Plan_type":"ANNUAL AIS(Maharashtra Mining)","Channel":"Market","New_Type":"Mining","amount":3337238.239999996,"Period":"Annual","PlanCat":"AIS","State":"Maharashtra"},{"Plan_type":"ANNUAL AIS(Maharashtra Mining)","Channel":"Tele","New_Type":"Mining","amount":142502.69999999992,"Period":"Annual","PlanCat":"AIS","State":"Maharashtra"},{"Plan_type":"ANNUAL AIS(Maharashtra Mining)","Channel":"Toll","New_Type":"Mining","amount":5099.95999999999,"Period":"Annual","PlanCat":"AIS","State":"Maharashtra"},{"Plan_type":"ANNUAL AIS(Rajasthan Mining 2G)","Channel":"FSN","New_Type":"Mining","amount":7900.09999999999,"Period":"Annual","PlanCat":"AIS","State":"Rajasthan"},{"Plan_type":"ANNUAL AIS(Rajasthan Mining 2G)","Channel":"Market","New_Type":"Mining","amount":31600.39999999996,"Period":"Annual","PlanCat":"AIS","State":"Rajasthan"},{"Plan_type":"ANNUAL AIS(Rajasthan Mining 2G)","Channel":"Tele","New_Type":"Mining","amount":7900.09999999999,"Period":"Annual","PlanCat":"AIS","State":"Rajasthan"},{"Plan_type":"ANNUAL AIS(Rajasthan Mining 4G)","Channel":"Market","New_Type":"Mining","amount":357195.43999999994,"Period":"Annual","PlanCat":"AIS","State":"Rajasthan"},{"Plan_type":"ANNUAL AIS(Rajasthan Mining 4G)","Channel":"Tele","New_Type":"Mining","amount":28199.64,"Period":"Annual","PlanCat":"AIS","State":"Rajasthan"},{"Plan_type":"ANNUAL AIS(Tamil Nadu Mining)","Channel":"Market","New_Type":"Mining","amount":706994.639999995,"Period":"Annual","PlanCat":"AIS","State":"Tamil Nadu"},{"Plan_type":"ANNUAL AIS(Telangana Mining)","Channel":"Market","New_Type":"Mining","amount":175379.86000000002,"Period":"Annual","PlanCat":"AIS","State":"Telangana"},{"Plan_type":"ANNUAL AIS(Telangana Mining)","Channel":"Tele","New_Type":"Mining","amount":5799.7,"Period":"Annual","PlanCat":"AIS","State":"Telangana"},{"Plan_type":"ANNUAL AIS(Uttar Pradesh Mining)","Channel":"0","New_Type":"Mining","amount":451416.08,"Period":"Annual","PlanCat":"AIS","State":"Uttar Pradesh"},{"Plan_type":"ANNUAL AIS(Uttar Pradesh Mining)","Channel":"CP","New_Type":"Mining","amount":1205545.82,"Period":"Annual","PlanCat":"AIS","State":"Uttar Pradesh"},{"Plan_type":"ANNUAL AIS(Uttar Pradesh Mining)","Channel":"FSN","New_Type":"Mining","amount":31799.82,"Period":"Annual","PlanCat":"AIS","State":"Uttar Pradesh"},{"Plan_type":"ANNUAL AIS(Uttar Pradesh Mining)","Channel":"Market","New_Type":"Mining","amount":8354835.420000001,"Period":"Annual","PlanCat":"AIS","State":"Uttar Pradesh"},{"Plan_type":"ANNUAL AIS(Uttar Pradesh Mining)","Channel":"Tele","New_Type":"Mining","amount":120802.5,"Period":"Annual","PlanCat":"AIS","State":"Uttar Pradesh"},{"Plan_type":"ANNUAL AIS(Uttar Pradesh Mining)","Channel":"Toll","New_Type":"Mining","amount":1170037.26,"Period":"Annual","PlanCat":"AIS","State":"Uttar Pradesh"},{"Plan_type":"ANNUAL AIS(Uttarakhand)","Channel":"CP","New_Type":"Passing","amount":98998.45999999989,"Period":"Annual","PlanCat":"AIS","State":"Uttarakhand"},{"Plan_type":"ANNUAL AIS(West Bengal (Food and Supply))","Channel":"0","New_Type":"Food Supplay","amount":133487.5,"Period":"Annual","PlanCat":"AIS","State":"West Bengal"},{"Plan_type":"ANNUAL AIS(West Bengal (Food and Supply))","Channel":"CP","New_Type":"Food Supplay","amount":381180.12,"Period":"Annual","PlanCat":"AIS","State":"West Bengal"},{"Plan_type":"ANNUAL AIS(West Bengal (Food and Supply))","Channel":"CP","New_Type":"Mining","amount":5799.7,"Period":"Annual","PlanCat":"AIS","State":"West Bengal"},{"Plan_type":"ANNUAL AIS(West Bengal (Food and Supply))","Channel":"Market","New_Type":"Food Supplay","amount":767728.0599999999,"Period":"Annual","PlanCat":"AIS","State":"West Bengal"},{"Plan_type":"ANNUAL AIS(West Bengal (Food and Supply))","Channel":"Market","New_Type":"Mining","amount":4199.62,"Period":"Annual","PlanCat":"AIS","State":"West Bengal"},{"Plan_type":"ANNUAL AIS(West Bengal (Food and Supply))","Channel":"Tele","New_Type":"Food Supplay","amount":13898.04,"Period":"Annual","PlanCat":"AIS","State":"West Bengal"},{"Plan_type":"ANNUAL AIS(West Bengal (Food and Supply))","Channel":"Toll","New_Type":"Food Supplay","amount":8599.84,"Period":"Annual","PlanCat":"AIS","State":"West Bengal"},{"Plan_type":"ANNUAL FUEL_SENSOR","Channel":"0","New_Type":"Non AIS","amount":200907.98,"Period":"Annual","PlanCat":"Fuel Sensor","State":"NA"},{"Plan_type":"ANNUAL FUEL_SENSOR","Channel":"CP","New_Type":"Non AIS","amount":92899.04,"Period":"Annual","PlanCat":"Fuel Sensor","State":"NA"},{"Plan_type":"ANNUAL FUEL_SENSOR","Channel":"FSN","New_Type":"Non AIS","amount":7600.379999999999,"Period":"Annual","PlanCat":"Fuel Sensor","State":"NA"},{"Plan_type":"ANNUAL FUEL_SENSOR","Channel":"Market","New_Type":"Mining","amount":12000.6,"Period":"Annual","PlanCat":"Fuel Sensor","State":"NA"},{"Plan_type":"ANNUAL FUEL_SENSOR","Channel":"Market","New_Type":"Non AIS","amount":12729658.28,"Period":"Annual","PlanCat":"Fuel Sensor","State":"NA"},{"Plan_type":"ANNUAL FUEL_SENSOR","Channel":"Tele","New_Type":"Non AIS","amount":3988515.64,"Period":"Annual","PlanCat":"Fuel Sensor","State":"NA"},{"Plan_type":"ANNUAL FUEL_SENSOR","Channel":"Toll","New_Type":"Non AIS","amount":178510.4,"Period":"Annual","PlanCat":"Fuel Sensor","State":"NA"},{"Plan_type":"ANNUAL NON_AIS","Channel":"0","New_Type":"Non AIS","amount":670439.4199999998,"Period":"Annual","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"ANNUAL NON_AIS","Channel":"CP","New_Type":"Mining","amount":3999.02,"Period":"Annual","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"ANNUAL NON_AIS","Channel":"CP","New_Type":"Non AIS","amount":2063032.94,"Period":"Annual","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"ANNUAL NON_AIS","Channel":"FSN","New_Type":"Non AIS","amount":61994.839999999975,"Period":"Annual","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"ANNUAL NON_AIS","Channel":"Market","New_Type":"DASHCAM","amount":154998.8999999988,"Period":"Annual","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"ANNUAL NON_AIS","Channel":"Market","New_Type":"Mining","amount":22598.179999999993,"Period":"Annual","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"ANNUAL NON_AIS","Channel":"Market","New_Type":"Non AIS","amount":22239843.499999993,"Period":"Annual","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"ANNUAL NON_AIS","Channel":"Tele","New_Type":"DASHCAM","amount":26000.1199999998,"Period":"Annual","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"ANNUAL NON_AIS","Channel":"Tele","New_Type":"Mining","amount":16798.479999999992,"Period":"Annual","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"ANNUAL NON_AIS","Channel":"Tele","New_Type":"Non AIS","amount":4809387.36,"Period":"Annual","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"ANNUAL NON_AIS","Channel":"Toll","New_Type":"Non AIS","amount":451650.89999999997,"Period":"Annual","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"ANNUAL PLAN_TEXT_ANNUAL_ANAAJ_KHARID_PLAN","Channel":"CP","New_Type":"Mining","amount":5982.599999999969,"Period":"Annual","PlanCat":"Other","State":"NA"},{"Plan_type":"ANNUAL WIRELESS","Channel":"CP","New_Type":"Non AIS","amount":9999.32,"Period":"Annual","PlanCat":"Wireless","State":"NA"},{"Plan_type":"ANNUAL WIRELESS","Channel":"Market","New_Type":"Non AIS","amount":27597.840000000004,"Period":"Annual","PlanCat":"Wireless","State":"NA"},{"Plan_type":"BIENNIAL AIS(AndhraPradesh Passing)","Channel":"CP","New_Type":"Passing","amount":9799.9,"Period":"Biennial","PlanCat":"AIS","State":"Andhra Pradesh"},{"Plan_type":"BIENNIAL AIS(AndhraPradesh Passing)","Channel":"FSN","New_Type":"Passing","amount":0.0,"Period":"Biennial","PlanCat":"AIS","State":"Andhra Pradesh"},{"Plan_type":"BIENNIAL AIS(AndhraPradesh Passing)","Channel":"Market","New_Type":"Passing","amount":670170.38,"Period":"Biennial","PlanCat":"AIS","State":"Andhra Pradesh"},{"Plan_type":"BIENNIAL AIS(AndhraPradesh Passing)","Channel":"Tele","New_Type":"Passing","amount":18498.86,"Period":"Biennial","PlanCat":"AIS","State":"Andhra Pradesh"},{"Plan_type":"BIENNIAL AIS(Arunachal Pradesh)","Channel":"Market","New_Type":"Mining","amount":9799.9,"Period":"Biennial","PlanCat":"AIS","State":"Arunachal Pradesh"},{"Plan_type":"BIENNIAL AIS(Assam Passing)","Channel":"0","New_Type":"Passing","amount":31599.22,"Period":"Biennial","PlanCat":"AIS","State":"Assam"},{"Plan_type":"BIENNIAL AIS(Assam Passing)","Channel":"CP","New_Type":"Passing","amount":59997.1,"Period":"Biennial","PlanCat":"AIS","State":"Assam"},{"Plan_type":"BIENNIAL AIS(Assam Passing)","Channel":"Market","New_Type":"Passing","amount":97999.0,"Period":"Biennial","PlanCat":"AIS","State":"Assam"},{"Plan_type":"BIENNIAL AIS(Bihar)","Channel":"0","New_Type":"Passing","amount":25398.31999999993,"Period":"Biennial","PlanCat":"AIS","State":"Bihar"},{"Plan_type":"BIENNIAL AIS(Bihar)","Channel":"CP","New_Type":"Passing","amount":347524.15999999683,"Period":"Biennial","PlanCat":"AIS","State":"Bihar"},{"Plan_type":"BIENNIAL AIS(Bihar)","Channel":"FSN","New_Type":"Passing","amount":2199.51999999998,"Period":"Biennial","PlanCat":"AIS","State":"Bihar"},{"Plan_type":"BIENNIAL AIS(Bihar)","Channel":"Market","New_Type":"Passing","amount":191193.03999999972,"Period":"Biennial","PlanCat":"AIS","State":"Bihar"},{"Plan_type":"BIENNIAL AIS(Bihar)","Channel":"Tele","New_Type":"Passing","amount":42798.59999999992,"Period":"Biennial","PlanCat":"AIS","State":"Bihar"},{"Plan_type":"BIENNIAL AIS(Chhattisgarh)","Channel":"0","New_Type":"Passing","amount":11999.4199999999,"Period":"Biennial","PlanCat":"AIS","State":"Chhattisgarh"},{"Plan_type":"BIENNIAL AIS(Chhattisgarh)","Channel":"CP","New_Type":"Passing","amount":15999.6199999999,"Period":"Biennial","PlanCat":"AIS","State":"Chhattisgarh"},{"Plan_type":"BIENNIAL AIS(Chhattisgarh)","Channel":"Market","New_Type":"Passing","amount":948454.4999999931,"Period":"Biennial","PlanCat":"AIS","State":"Chhattisgarh"},{"Plan_type":"BIENNIAL AIS(Delhi)","Channel":"CP","New_Type":"Mining","amount":16000.8,"Period":"Biennial","PlanCat":"AIS","State":"Delhi"},{"Plan_type":"BIENNIAL AIS(Delhi)","Channel":"CP","New_Type":"Passing","amount":392019.6,"Period":"Biennial","PlanCat":"AIS","State":"Delhi"},{"Plan_type":"BIENNIAL AIS(Gujarat Passing)","Channel":"0","New_Type":"Passing","amount":9799.9,"Period":"Biennial","PlanCat":"AIS","State":"Gujarat"},{"Plan_type":"BIENNIAL AIS(Gujarat Passing)","Channel":"CP","New_Type":"Passing","amount":9799.9,"Period":"Biennial","PlanCat":"AIS","State":"Gujarat"},{"Plan_type":"BIENNIAL AIS(Gujarat Passing)","Channel":"Market","New_Type":"Passing","amount":333196.6,"Period":"Biennial","PlanCat":"AIS","State":"Gujarat"},{"Plan_type":"BIENNIAL AIS(Haryana Passing)","Channel":"0","New_Type":"Passing","amount":9799.9,"Period":"Biennial","PlanCat":"AIS","State":"Haryana"},{"Plan_type":"BIENNIAL AIS(Haryana Passing)","Channel":"Market","New_Type":"Passing","amount":19599.8,"Period":"Biennial","PlanCat":"AIS","State":"Haryana"},{"Plan_type":"BIENNIAL AIS(Himachal Pradesh)","Channel":"Market","New_Type":"Passing","amount":362989.23999999947,"Period":"Biennial","PlanCat":"AIS","State":"Himachal Pradesh"},{"Plan_type":"BIENNIAL AIS(Himachal Pradesh)","Channel":"Tele","New_Type":"Passing","amount":7500.07999999999,"Period":"Biennial","PlanCat":"AIS","State":"Himachal Pradesh"},{"Plan_type":"BIENNIAL AIS(Jammu & Kashmir)","Channel":"CP","New_Type":"Mining","amount":62752.399999999994,"Period":"Biennial","PlanCat":"AIS","State":"Jammu & Kashmir"},{"Plan_type":"BIENNIAL AIS(Jammu & Kashmir)","Channel":"Market","New_Type":"Mining","amount":487019.04,"Period":"Biennial","PlanCat":"AIS","State":"Jammu & Kashmir"},{"Plan_type":"BIENNIAL AIS(Madhya Pradesh)","Channel":"CP","New_Type":"Mining","amount":2000.1,"Period":"Biennial","PlanCat":"AIS","State":"Madhya Pradesh"},{"Plan_type":"BIENNIAL AIS(Madhya Pradesh)","Channel":"Market","New_Type":"Mining","amount":659083.1,"Period":"Biennial","PlanCat":"AIS","State":"Madhya Pradesh"},{"Plan_type":"BIENNIAL AIS(Madhya Pradesh)","Channel":"Market","New_Type":"Non AIS","amount":12249.58,"Period":"Biennial","PlanCat":"AIS","State":"Madhya Pradesh"},{"Plan_type":"BIENNIAL AIS(Madhya Pradesh)","Channel":"Tele","New_Type":"Mining","amount":122495.8,"Period":"Biennial","PlanCat":"AIS","State":"Madhya Pradesh"},{"Plan_type":"BIENNIAL AIS(Maharashtra)","Channel":"0","New_Type":"Passing","amount":221902.54,"Period":"Biennial","PlanCat":"AIS","State":"Maharashtra"},{"Plan_type":"BIENNIAL AIS(Maharashtra)","Channel":"CP","New_Type":"Passing","amount":89101.8,"Period":"Biennial","PlanCat":"AIS","State":"Maharashtra"},{"Plan_type":"BIENNIAL AIS(Maharashtra)","Channel":"FSN","New_Type":"Passing","amount":25400.68,"Period":"Biennial","PlanCat":"AIS","State":"Maharashtra"},{"Plan_type":"BIENNIAL AIS(Maharashtra)","Channel":"Market","New_Type":"Mining","amount":50801.36,"Period":"Biennial","PlanCat":"AIS","State":"Maharashtra"},{"Plan_type":"BIENNIAL AIS(Maharashtra)","Channel":"Market","New_Type":"Non AIS","amount":12700.34,"Period":"Biennial","PlanCat":"AIS","State":"Maharashtra"},{"Plan_type":"BIENNIAL AIS(Maharashtra)","Channel":"Market","New_Type":"Passing","amount":8282096.68,"Period":"Biennial","PlanCat":"AIS","State":"Maharashtra"},{"Plan_type":"BIENNIAL AIS(Maharashtra)","Channel":"Tele","New_Type":"Passing","amount":441710.58,"Period":"Biennial","PlanCat":"AIS","State":"Maharashtra"},{"Plan_type":"BIENNIAL AIS(National Permit)","Channel":"Tele","New_Type":"Mining","amount":6999.75999999999,"Period":"Biennial","PlanCat":"AIS","State":"National Permit"},{"Plan_type":"BIENNIAL AIS(Punjab Passing)","Channel":"0","New_Type":"Passing","amount":9799.9,"Period":"Biennial","PlanCat":"AIS","State":"Punjab"},{"Plan_type":"BIENNIAL AIS(Punjab Passing)","Channel":"Market","New_Type":"Passing","amount":9799.9,"Period":"Biennial","PlanCat":"AIS","State":"Punjab"},{"Plan_type":"BIENNIAL AIS(Punjab Passing)","Channel":"Tele","New_Type":"Passing","amount":11999.42,"Period":"Biennial","PlanCat":"AIS","State":"Punjab"},{"Plan_type":"BIENNIAL AIS(Rajasthan RTO)","Channel":"Market","New_Type":"Mining","amount":11100.26,"Period":"Biennial","PlanCat":"AIS","State":"Rajasthan"},{"Plan_type":"BIENNIAL AIS(Rajasthan RTO)","Channel":"Market","New_Type":"Passing","amount":31799.82,"Period":"Biennial","PlanCat":"AIS","State":"Rajasthan"},{"Plan_type":"BIENNIAL AIS(Rajasthan RTO)","Channel":"Tele","New_Type":"Passing","amount":22200.52,"Period":"Biennial","PlanCat":"AIS","State":"Rajasthan"},{"Plan_type":"BIENNIAL AIS(Uttar Pradesh RTO)","Channel":"CP","New_Type":"Passing","amount":197999.27999999997,"Period":"Biennial","PlanCat":"AIS","State":"Uttar Pradesh"},{"Plan_type":"BIENNIAL AIS(Uttarakhand)","Channel":"0","New_Type":"Passing","amount":14200.11999999998,"Period":"Biennial","PlanCat":"AIS","State":"Uttarakhand"},{"Plan_type":"BIENNIAL AIS(Uttarakhand)","Channel":"CP","New_Type":"Mining","amount":8999.85999999999,"Period":"Biennial","PlanCat":"AIS","State":"Uttarakhand"},{"Plan_type":"BIENNIAL AIS(Uttarakhand)","Channel":"CP","New_Type":"Passing","amount":1295979.8399999985,"Period":"Biennial","PlanCat":"AIS","State":"Uttarakhand"},{"Plan_type":"BIENNIAL AIS(Uttarakhand)","Channel":"Market","New_Type":"Passing","amount":53200.29999999993,"Period":"Biennial","PlanCat":"AIS","State":"Uttarakhand"},{"Plan_type":"BIENNIAL AIS(Uttarakhand)","Channel":"Tele","New_Type":"Passing","amount":42500.05999999994,"Period":"Biennial","PlanCat":"AIS","State":"Uttarakhand"},{"Plan_type":"BIENNIAL AIS(West Bengal)","Channel":"0","New_Type":"Passing","amount":15200.75999999998,"Period":"Biennial","PlanCat":"AIS","State":"West Bengal"},{"Plan_type":"BIENNIAL NON_AIS","Channel":"0","New_Type":"Non AIS","amount":35900.32,"Period":"Biennial","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"BIENNIAL NON_AIS","Channel":"CP","New_Type":"Non AIS","amount":27705.21999999984,"Period":"Biennial","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"BIENNIAL NON_AIS","Channel":"Market","New_Type":"Mining","amount":9799.900000000001,"Period":"Biennial","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"BIENNIAL NON_AIS","Channel":"Market","New_Type":"Non AIS","amount":421786.2799999999,"Period":"Biennial","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"BIENNIAL NON_AIS","Channel":"Tele","New_Type":"Non AIS","amount":422617.0,"Period":"Biennial","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"MONTHLY NON_AIS","Channel":"0","New_Type":"FUEL_SENSOR","amount":29994.42,"Period":"Monthly","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"MONTHLY NON_AIS","Channel":"0","New_Type":"Non AIS","amount":86062.12,"Period":"Monthly","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"MONTHLY NON_AIS","Channel":"CP","New_Type":"FUEL_SENSOR","amount":7998.04,"Period":"Monthly","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"MONTHLY NON_AIS","Channel":"CP","New_Type":"Non AIS","amount":27189.56,"Period":"Monthly","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"MONTHLY NON_AIS","Channel":"FSN","New_Type":"Non AIS","amount":3200.1600000000008,"Period":"Monthly","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"MONTHLY NON_AIS","Channel":"Market","New_Type":"FUEL_SENSOR","amount":546874.54,"Period":"Monthly","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"MONTHLY NON_AIS","Channel":"Market","New_Type":"Mining","amount":6995.039999999999,"Period":"Monthly","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"MONTHLY NON_AIS","Channel":"Market","New_Type":"Non AIS","amount":1157506.8399999999,"Period":"Monthly","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"MONTHLY NON_AIS","Channel":"Tele","New_Type":"FUEL_SENSOR","amount":1062765.82,"Period":"Monthly","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"MONTHLY NON_AIS","Channel":"Tele","New_Type":"Mining","amount":12596.5,"Period":"Monthly","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"MONTHLY NON_AIS","Channel":"Tele","New_Type":"Non AIS","amount":3019879.6,"Period":"Monthly","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"MONTHLY NON_AIS","Channel":"Toll","New_Type":"Non AIS","amount":4800.24,"Period":"Monthly","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"TRIENNIAL NON_AIS","Channel":"0","New_Type":"Non AIS","amount":133612.58,"Period":"Triennial","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"TRIENNIAL NON_AIS","Channel":"CP","New_Type":"Non AIS","amount":81993.4799999997,"Period":"Triennial","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"TRIENNIAL NON_AIS","Channel":"FSN","New_Type":"Non AIS","amount":15101.64,"Period":"Triennial","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"TRIENNIAL NON_AIS","Channel":"Market","New_Type":"Mining","amount":6301.2,"Period":"Triennial","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"TRIENNIAL NON_AIS","Channel":"Market","New_Type":"Non AIS","amount":4417671.02,"Period":"Triennial","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"TRIENNIAL NON_AIS","Channel":"Tele","New_Type":"Non AIS","amount":557594.84,"Period":"Triennial","PlanCat":"Non-AIS","State":"NA"},{"Plan_type":"TRIENNIAL NON_AIS","Channel":"Toll","New_Type":"Non AIS","amount":59107.37999999999,"Period":"Triennial","PlanCat":"Non-AIS","State":"NA"}];
+const DATA = [{"state": "Andhra Pradesh", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Andhra Pradesh)", "sale": "AIS(Andhra Pradesh)", "new_type": "Mining", "count": 168, "sum": 1002575.2}, {"state": "Andhra Pradesh", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Andhra Pradesh)", "sale": "AIS(Andhra Pradesh)", "new_type": "Non AIS", "count": 1, "sum": 5700.58}, {"state": "Bihar", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Bihar Mining)", "sale": "AIS(Bihar Mining)", "new_type": "Mining", "count": 984, "sum": 5222641.05999999}, {"state": "Bihar", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Bihar Mining)", "sale": "AIS(Bihar Mining)", "new_type": "Non AIS", "count": 5, "sum": 26502.799999999952}, {"state": "Bihar", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Bihar)", "sale": "AIS(Bihar)", "new_type": "Passing", "count": 14, "sum": 76400.27999999998}, {"state": "Delhi", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Delhi)", "sale": "AIS(Delhi)", "new_type": "Passing", "count": 3, "sum": 17299.97999999999}, {"state": "Gujarat", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Gujarat Mining 4G)", "sale": "AIS(Gujarat Mining 4G)", "new_type": "Mining", "count": 201, "sum": 1483327.2599999998}, {"state": "Gujarat", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Gujarat Mining)", "sale": "AIS(Gujarat Mining)", "new_type": "Mining", "count": 239, "sum": 1373213.1999999976}, {"state": "Gujarat", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Gujarat)", "sale": "AIS(Gujarat)", "new_type": "Mining", "count": 13, "sum": 75581.3599999999}, {"state": "Haryana", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Haryana FCI)", "sale": "AIS(Haryana FCI)", "new_type": "Mining", "count": 1374, "sum": 5902286.84}, {"state": "Haryana", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Haryana FCI)", "sale": "AIS(Haryana FCI)", "new_type": "Non AIS", "count": 2, "sum": 8599.84}, {"state": "Jammu & Kashmir", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Jammu & Kashmir Mining)", "sale": "AIS(Jammu & Kashmir Mining)", "new_type": "Mining", "count": 431, "sum": 2067231.3800000001}, {"state": "Jammu & Kashmir", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Jammu & Kashmir)", "sale": "AIS(Jammu & Kashmir)", "new_type": "Passing", "count": 1, "sum": 10749.8}, {"state": "Karnataka", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Karnataka Mining)", "sale": "AIS(Karnataka Mining)", "new_type": "Mining", "count": 2, "sum": 19297.72}, {"state": "Karnataka", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Karnataka)", "sale": "AIS(Karnataka)", "new_type": "Mining", "count": 3, "sum": 29328.899999999998}, {"state": "Karnataka", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Karnataka)", "sale": "AIS(Karnataka)", "new_type": "Non AIS", "count": 1, "sum": 8950.3}, {"state": "Karnataka", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Karnataka)", "sale": "AIS(Karnataka)", "new_type": "Passing", "count": 799, "sum": 8494772.799999999}, {"state": "Madhya Pradesh", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Madhya Pradesh)", "sale": "AIS(Madhya Pradesh)", "new_type": "Mining", "count": 1, "sum": 12249.58}, {"state": "Madhya Pradesh", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Madhya Pradesh)", "sale": "AIS(Madhya Pradesh)", "new_type": "Passing", "count": 48, "sum": 570440.3199999989}, {"state": "Maharashtra", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Maharashtra GNFC)", "sale": "AIS(Maharashtra GNFC)", "new_type": "Mining", "count": 426, "sum": 2179619.2999999984}, {"state": "Maharashtra", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Maharashtra GNFC)", "sale": "AIS(Maharashtra GNFC)", "new_type": "Non AIS", "count": 1, "sum": 4899.36}, {"state": "Maharashtra", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Maharashtra Mining)", "sale": "AIS(Maharashtra Mining)", "new_type": "Mining", "count": 663, "sum": 3479340.919999996}, {"state": "Rajasthan", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Rajasthan Mining 2G)", "sale": "AIS(Rajasthan Mining 2G)", "new_type": "Mining", "count": 6, "sum": 47400.59999999994}, {"state": "Rajasthan", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Rajasthan Mining 4G)", "sale": "AIS(Rajasthan Mining 4G)", "new_type": "Mining", "count": 41, "sum": 385395.07999999996}, {"state": "Tamil Nadu", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Tamil Nadu Mining)", "sale": "AIS(Tamil Nadu Mining)", "new_type": "Mining", "count": 51, "sum": 706994.639999995}, {"state": "Telangana", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Telangana Mining)", "sale": "AIS(Telangana Mining)", "new_type": "Mining", "count": 34, "sum": 181179.56}, {"state": "Uttar Pradesh", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(Uttar Pradesh Mining)", "sale": "AIS(Uttar Pradesh Mining)", "new_type": "Mining", "count": 923, "sum": 9656074.520000001}, {"state": "West Bengal", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(West Bengal (Food and Supply))", "sale": "AIS(West Bengal (Food and Supply))", "new_type": "Food Supplay", "count": 184, "sum": 790225.94}, {"state": "West Bengal", "period": "ANNUAL", "category": "AIS", "plan": "ANNUAL AIS(West Bengal (Food and Supply))", "sale": "AIS(West Bengal (Food and Supply))", "new_type": "Mining", "count": 1, "sum": 4199.62}, {"state": "Other", "period": "ANNUAL", "category": "FUEL_SENSOR", "plan": "ANNUAL FUEL_SENSOR", "sale": "Fuel_Sensor", "new_type": "Mining", "count": 3, "sum": 12000.6}, {"state": "Other", "period": "ANNUAL", "category": "FUEL_SENSOR", "plan": "ANNUAL FUEL_SENSOR", "sale": "Fuel_Sensor", "new_type": "Non AIS", "count": 2316, "sum": 16738477.0}, {"state": "Other", "period": "ANNUAL", "category": "NON_AIS", "plan": "ANNUAL NON_AIS", "sale": "1_yr_Non_AIS", "new_type": "Non AIS", "count": 1, "sum": 0.0}, {"state": "Other", "period": "ANNUAL", "category": "NON_AIS", "plan": "ANNUAL NON_AIS", "sale": "NON_AIS", "new_type": "DASHCAM", "count": 14, "sum": 180999.0199999986}, {"state": "Other", "period": "ANNUAL", "category": "NON_AIS", "plan": "ANNUAL NON_AIS", "sale": "NON_AIS", "new_type": "Mining", "count": 14, "sum": 39396.65999999998}, {"state": "Other", "period": "ANNUAL", "category": "NON_AIS", "plan": "ANNUAL NON_AIS", "sale": "NON_AIS", "new_type": "NON-AIS", "count": 3, "sum": 8099.52}, {"state": "Other", "period": "ANNUAL", "category": "NON_AIS", "plan": "ANNUAL NON_AIS", "sale": "NON_AIS", "new_type": "Non AIS", "count": 9456, "sum": 27156209.659999993}, {"state": "Other", "period": "ANNUAL", "category": "NON_AIS_4G", "plan": "ANNUAL NON_AIS_4G", "sale": "NON_AIS_4G", "new_type": "Non AIS", "count": 1, "sum": 0.0}, {"state": "Other", "period": "ANNUAL", "category": "ANAAJ_KHARID", "plan": "ANNUAL PLAN_TEXT_ANNUAL_ANAAJ_KHARID_PLAN", "sale": "PUNSUP", "new_type": "Mining", "count": 957, "sum": 2521531.379999991}, {"state": "Other", "period": "ANNUAL", "category": "WIRELESS", "plan": "ANNUAL WIRELESS", "sale": "WIRELESS", "new_type": "Non AIS", "count": 11, "sum": 27597.840000000004}, {"state": "Andhra Pradesh", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(AndhraPradesh Passing)", "sale": "AIS(AndhraPradesh Passing)", "new_type": "Passing", "count": 74, "sum": 688669.24}, {"state": "Arunachal Pradesh", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(Arunachal Pradesh)", "sale": "AIS(Arunachal Pradesh)", "new_type": "Mining", "count": 1, "sum": 9799.9}, {"state": "Assam", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(Assam Passing)", "sale": "AIS(Assam Passing)", "new_type": "Passing", "count": 10, "sum": 97999.0}, {"state": "Bihar", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(Bihar)", "sale": "AIS(Bihar)", "new_type": "Passing", "count": 43, "sum": 236191.15999999963}, {"state": "Chhattisgarh", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(Chhattisgarh)", "sale": "AIS(Chhattisgarh)", "new_type": "Passing", "count": 79, "sum": 948454.4999999931}, {"state": "Gujarat", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(Gujarat Passing)", "sale": "AIS(Gujarat Passing)", "new_type": "Passing", "count": 34, "sum": 333196.6}, {"state": "Haryana", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(Haryana Passing)", "sale": "AIS(Haryana Passing)", "new_type": "Mining", "count": 1, "sum": 9799.9}, {"state": "Haryana", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(Haryana Passing)", "sale": "AIS(Haryana Passing)", "new_type": "Passing", "count": 1, "sum": 9799.9}, {"state": "Himachal Pradesh", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(Himachal Pradesh)", "sale": "AIS(Himachal Pradesh)", "new_type": "Passing", "count": 48, "sum": 335490.51999999955}, {"state": "Jammu & Kashmir", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(Jammu & Kashmir)", "sale": "AIS(Jammu & Kashmir)", "new_type": "Mining", "count": 66, "sum": 487019.04}, {"state": "Madhya Pradesh", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(Madhya Pradesh)", "sale": "AIS(Madhya Pradesh)", "new_type": "Mining", "count": 64, "sum": 781578.9}, {"state": "Madhya Pradesh", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(Madhya Pradesh)", "sale": "AIS(Madhya Pradesh)", "new_type": "Non AIS", "count": 1, "sum": 12249.58}, {"state": "Maharashtra", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(Maharashtra)", "sale": "AIS(Maharashtra)", "new_type": "Mining", "count": 4, "sum": 50801.36}, {"state": "Maharashtra", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(Maharashtra)", "sale": "AIS(Maharashtra)", "new_type": "Non AIS", "count": 1, "sum": 12700.34}, {"state": "Maharashtra", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(Maharashtra)", "sale": "AIS(Maharashtra)", "new_type": "Passing", "count": 685, "sum": 8711307.52}, {"state": "National Permit", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(National Permit)", "sale": "AIS(National Permit)", "new_type": "Mining", "count": 1, "sum": 6999.75999999999}, {"state": "Punjab", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(Punjab Passing)", "sale": "AIS(Punjab Passing)", "new_type": "Passing", "count": 2, "sum": 21799.32}, {"state": "Rajasthan", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(Rajasthan RTO)", "sale": "AIS(Rajasthan RTO)", "new_type": "Mining", "count": 1, "sum": 11100.26}, {"state": "Rajasthan", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(Rajasthan RTO)", "sale": "AIS(Rajasthan RTO)", "new_type": "Passing", "count": 5, "sum": 54000.340000000004}, {"state": "Uttarakhand", "period": "BIENNIAL", "category": "AIS", "plan": "BIENNIAL AIS(Uttarakhand)", "sale": "AIS(Uttarakhand)", "new_type": "Passing", "count": 13, "sum": 95700.35999999987}, {"state": "Other", "period": "BIENNIAL", "category": "NON_AIS", "plan": "BIENNIAL NON_AIS", "sale": "2_year_Non_AIS", "new_type": "Mining", "count": 2, "sum": 9799.900000000001}, {"state": "Other", "period": "BIENNIAL", "category": "NON_AIS", "plan": "BIENNIAL NON_AIS", "sale": "2_year_Non_AIS", "new_type": "NON-AIS", "count": 1, "sum": 4800.24}, {"state": "Other", "period": "BIENNIAL", "category": "NON_AIS", "plan": "BIENNIAL NON_AIS", "sale": "2_year_Non_AIS", "new_type": "Non AIS", "count": 171, "sum": 839603.0399999999}, {"state": "Other", "period": "MONTHLY", "category": "NON_AIS", "plan": "MONTHLY NON_AIS", "sale": "Fuel_Sensor", "new_type": "FUEL_SENSOR", "count": 429, "sum": 1601642.32}, {"state": "Other", "period": "MONTHLY", "category": "NON_AIS", "plan": "MONTHLY NON_AIS", "sale": "Fuel_Sensor", "new_type": "Mining", "count": 1, "sum": 3999.02}, {"state": "Other", "period": "MONTHLY", "category": "NON_AIS", "plan": "MONTHLY NON_AIS", "sale": "Fuel_Sensor", "new_type": "NON-AIS", "count": 2, "sum": 7998.04}, {"state": "Other", "period": "MONTHLY", "category": "NON_AIS", "plan": "MONTHLY NON_AIS", "sale": "NON_AIS", "new_type": "Mining", "count": 15, "sum": 15592.52}, {"state": "Other", "period": "MONTHLY", "category": "NON_AIS", "plan": "MONTHLY NON_AIS", "sale": "NON_AIS", "new_type": "NON-AIS", "count": 8, "sum": 7098.880000000002}, {"state": "Other", "period": "MONTHLY", "category": "NON_AIS", "plan": "MONTHLY NON_AIS", "sale": "NON_AIS", "new_type": "Non AIS", "count": 4070, "sum": 4149106.56}, {"state": "Other", "period": "TRIENNIAL", "category": "NON_AIS", "plan": "TRIENNIAL NON_AIS", "sale": "3_year_Non_AIS", "new_type": "Mining", "count": 1, "sum": 6301.2}, {"state": "Other", "period": "TRIENNIAL", "category": "NON_AIS", "plan": "TRIENNIAL NON_AIS", "sale": "3_year_Non_AIS", "new_type": "Non AIS", "count": 795, "sum": 5017376.52}];
+const PERIODS = ["ANNUAL", "MONTHLY", "BIENNIAL", "TRIENNIAL"];
+const CATEGORIES = ["AIS", "ANAAJ_KHARID", "FUEL_SENSOR", "NON_AIS", "NON_AIS_4G", "WIRELESS"];
+const STATES = ["Maharashtra", "Haryana", "Bihar", "Uttar Pradesh", "Karnataka", "Jammu & Kashmir", "Gujarat", "Andhra Pradesh", "West Bengal", "Madhya Pradesh", "Chhattisgarh", "Rajasthan", "Tamil Nadu", "Himachal Pradesh", "Telangana", "Uttarakhand", "Assam", "Delhi", "Punjab", "Arunachal Pradesh", "National Permit", "Other"];
 
-const fmtINR = n => {
-  if (n == null || isNaN(n)) return "—";
-  if (Math.abs(n) >= 1e7) return "₹ " + (n/1e7).toFixed(2) + " Cr";
-  if (Math.abs(n) >= 1e5) return "₹ " + (n/1e5).toFixed(2) + " L";
-  return "₹ " + Math.round(n).toLocaleString("en-IN");
+const PALETTE = ['#2563eb','#0891b2','#7c3aed','#059669','#ea580c','#db2777','#475569','#ca8a04'];
+
+const fmt  = (n) => n.toLocaleString('en-IN');
+const fmt2 = (n) => n.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtCompact = (n) => {
+  const abs = Math.abs(n);
+  if (abs >= 1e7) return '₹' + (n/1e7).toFixed(2) + ' Cr';
+  if (abs >= 1e5) return '₹' + (n/1e5).toFixed(2) + ' L';
+  if (abs >= 1e3) return '₹' + (n/1e3).toFixed(1) + 'K';
+  return '₹' + fmt2(n);
 };
-const fmtPct = n => (n*100).toFixed(1) + "%";
-const fmtInt = n => n.toLocaleString("en-IN");
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-const PERIODS = ["Annual","Biennial","Monthly","Triennial"];
-const PLAN_CATS = ["AIS","Non-AIS","Fuel Sensor","Wireless","Other"];
-
-// New_Type display labels (raw -> nice)
-const NEW_TYPE_LABEL = {
-  "Mining": "Mining",
-  "Non AIS": "Non AIS",
-  "Passing": "Passing",
-  "DASHCAM": "Dashcam",
-  "FUEL_SENSOR": "Fuel Sensor",
-  "Food Supplay": "Food Supply"
-};
-const NEW_TYPE_ORDER = ["Mining","Non AIS","Passing","DASHCAM","FUEL_SENSOR","Food Supplay"];
-const newTypeSelection = new Set(NEW_TYPE_ORDER); // all selected by default
-
-const STATES = Array.from(new Set(DATA.map(d => d.State))).sort((a,b) => {
-  if (a === "NA") return 1; if (b === "NA") return -1;
-  if (a === "National Permit") return 1; if (b === "National Permit") return -1;
-  return a.localeCompare(b);
-});
-
-const fillSelect = (id, options) => {
-  const sel = document.getElementById(id);
-  options.forEach(opt => {
-    const o = document.createElement("option");
-    o.value = opt; o.textContent = opt;
-    sel.appendChild(o);
-  });
-};
-fillSelect("fPeriod", PERIODS);
-fillSelect("fPlanCat", PLAN_CATS);
-fillSelect("fState", STATES);
-
-document.getElementById("dataInfo").textContent =
-  DATA.length + " records · " +
-  new Set(DATA.map(d => d.Plan_type)).size + " plan_types";
-
-// Build chip toggles for New_Type
-const chipContainer = document.getElementById("newTypeChips");
-NEW_TYPE_ORDER.forEach(v => {
-  const b = document.createElement("button");
-  b.className = "chip active";
-  b.dataset.v = v;
-  b.textContent = NEW_TYPE_LABEL[v];
-  b.addEventListener("click", () => {
-    if (newTypeSelection.has(v)) newTypeSelection.delete(v); else newTypeSelection.add(v);
-    if (newTypeSelection.size === 0) { newTypeSelection.add(v); return; } // never allow zero
-    b.classList.toggle("active");
-    renderNewType(applyFilters());
-  });
-  chipContainer.appendChild(b);
-});
-
-const PALETTE = ["#2563eb","#7c3aed","#059669","#ea580c","#db2777","#0891b2","#dc2626","#facc15","#64748b","#16a34a"];
-
-let charts = {};
-
-function aggregate(rows, key) {
-  const m = {};
-  rows.forEach(r => { m[r[key]] = (m[r[key]] || 0) + r.amount; });
-  return Object.entries(m).map(([k,v]) => ({ key: k, value: v })).sort((a,b) => b.value - a.value);
-}
-
-function renderDonut(id, agg, palette) {
-  if (charts[id]) charts[id].destroy();
-  const ctx = document.getElementById(id).getContext("2d");
-  charts[id] = new Chart(ctx, {
-    type: "doughnut",
-    data: {
-      labels: agg.map(a => a.key),
-      datasets: [{ data: agg.map(a => a.value), backgroundColor: agg.map((_,i) => palette[i % palette.length]), borderColor: "#fff", borderWidth: 2 }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, cutout: "62%",
-      plugins: {
-        legend: { position: "bottom", labels: { font: { size: 11 }, boxWidth: 12, padding: 8 } },
-        tooltip: { callbacks: { label: (c) => {
-          const total = c.dataset.data.reduce((s,v) => s+v, 0);
-          return `${c.label}: ${fmtINR(c.parsed)} (${total ? fmtPct(c.parsed/total) : "0%"})`;
-        }}},
-        datalabels: { display: false }
-      }
-    }
+// Populate dropdowns
+function fill(id, items){
+  const el = document.getElementById(id);
+  items.forEach(v => {
+    const o = document.createElement('option'); o.value = v; o.textContent = v;
+    el.appendChild(o);
   });
 }
+fill('fPeriod', PERIODS);
+fill('fPlan', CATEGORIES);
+fill('fState', STATES);
 
-function renderChannelBar(rows) {
-  const agg = aggregate(rows, "Channel");
-  if (charts.chartChannel) charts.chartChannel.destroy();
-  const ctx = document.getElementById("chartChannel").getContext("2d");
-  charts.chartChannel = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: agg.map(a => a.key),
-      datasets: [{ data: agg.map(a => a.value), backgroundColor: agg.map((_,i) => PALETTE[i % PALETTE.length]), borderRadius: 4 }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: c => fmtINR(c.parsed.y) } },
-        datalabels: { display: false }
-      },
-      scales: {
-        y: { ticks: { callback: v => fmtINR(v), font: { size: 10 } }, grid: { color: "#f0f1f4" } },
-        x: { ticks: { font: { size: 11 } }, grid: { display: false } }
-      }
-    }
-  });
+let chartPeriod = null, chartPlan = null;
+
+function getFilters(){
+  return {
+    period: document.getElementById('fPeriod').value,
+    plan:   document.getElementById('fPlan').value,
+    state:  document.getElementById('fState').value,
+  };
 }
 
-function renderStates(rows) {
-  // exclude NA
-  const filtered = rows.filter(r => r.State !== "NA");
-  const agg = aggregate(filtered, "State").slice(0, 15);
-  if (charts.chartStates) charts.chartStates.destroy();
-  const ctx = document.getElementById("chartStates").getContext("2d");
-  // build a gradient from accent to lighter accent based on rank
-  const max = agg[0]?.value || 1;
-  const colors = agg.map(a => {
-    const t = a.value / max; // 1 for top, decreasing
-    // interpolate from deep blue #1d4ed8 to soft blue #93c5fd
-    const r = Math.round(147 + (29 - 147) * t);
-    const g = Math.round(197 + (78 - 197) * t);
-    const b = Math.round(253 + (216 - 253) * t);
-    return `rgb(${r},${g},${b})`;
-  });
-  charts.chartStates = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: agg.map(a => a.key),
-      datasets: [{ data: agg.map(a => a.value), backgroundColor: colors, borderRadius: 5, borderSkipped: false, barThickness: 18 }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      indexAxis: "y",
-      layout: { padding: { right: 70 } },
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: c => fmtINR(c.parsed.x) } },
-        datalabels: {
-          anchor: "end", align: "end", offset: 6,
-          color: "#1f2937", font: { size: 11, weight: "600" },
-          formatter: v => fmtINR(v)
-        }
-      },
-      scales: {
-        x: { display: false, grid: { display: false }, beginAtZero: true },
-        y: { ticks: { font: { size: 12 }, color: "#374151" }, grid: { display: false }, border: { display: false } }
-      }
-    }
-  });
-}
-
-function renderNewType(rows) {
-  const filtered = rows.filter(r => newTypeSelection.has(r.New_Type));
-  const agg = aggregate(filtered, "New_Type");
-  // sort by predefined order
-  agg.sort((a,b) => NEW_TYPE_ORDER.indexOf(a.key) - NEW_TYPE_ORDER.indexOf(b.key));
-  if (charts.chartNewType) charts.chartNewType.destroy();
-  const ctx = document.getElementById("chartNewType").getContext("2d");
-  charts.chartNewType = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: agg.map(a => NEW_TYPE_LABEL[a.key] || a.key),
-      datasets: [{
-        data: agg.map(a => a.value),
-        backgroundColor: agg.map((_,i) => PALETTE[i % PALETTE.length]),
-        borderRadius: 4
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: c => fmtINR(c.parsed.y) } },
-        datalabels: { display: false }
-      },
-      scales: {
-        y: { ticks: { callback: v => fmtINR(v), font: { size: 10 } }, grid: { color: "#f0f1f4" } },
-        x: { ticks: { font: { size: 10 } }, grid: { display: false } }
-      }
-    }
-  });
-}
-
-function applyFilters() {
-  const p = document.getElementById("fPeriod").value;
-  const c = document.getElementById("fPlanCat").value;
-  const s = document.getElementById("fState").value;
-  return DATA.filter(d =>
-    (p === "__ALL__" || d.Period === p) &&
-    (c === "__ALL__" || d.PlanCat === c) &&
-    (s === "__ALL__" || d.State === s)
+function applyFilters(rows, f){
+  return rows.filter(r =>
+    (f.period === 'All' || r.period === f.period) &&
+    (f.plan   === 'All' || r.category === f.plan) &&
+    (f.state  === 'All' || r.state === f.state)
   );
 }
 
-function render() {
-  const rows = applyFilters();
-  const total = rows.reduce((s,r) => s + r.amount, 0);
-  const planSet = new Set(rows.map(r => r.Plan_type));
-  const stateSet = new Set(rows.filter(r => r.State !== "NA").map(r => r.State));
-  document.getElementById("kpiRevenue").textContent = fmtINR(total);
-  document.getElementById("kpiPlans").textContent = fmtInt(planSet.size);
-  document.getElementById("kpiStates").textContent = fmtInt(stateSet.size);
-  document.getElementById("kpiAvg").textContent = planSet.size > 0 ? fmtINR(total / planSet.size) : "—";
-
-  renderDonut("chartPeriod", aggregate(rows, "Period"), PALETTE);
-  renderDonut("chartPlanCat", aggregate(rows, "PlanCat"), PALETTE);
-  renderChannelBar(rows);
-  renderStates(rows);
-  renderNewType(rows);
+function aggBy(rows, key){
+  const m = new Map();
+  for (const r of rows){
+    if (!m.has(r[key])) m.set(r[key], 0);
+    m.set(r[key], m.get(r[key]) + r.sum);
+  }
+  // sort by value desc
+  return Array.from(m.entries()).sort((a,b) => b[1] - a[1]);
 }
 
-// Register datalabels plugin globally
-Chart.register(ChartDataLabels);
-// But default it off
-Chart.defaults.set('plugins.datalabels', { display: false });
+function renderCharts(rows){
+  // Period: keep canonical order; Plan: by value desc
+  const byPeriodMap = new Map(aggBy(rows, 'period'));
+  const periodLabels = PERIODS.filter(p => byPeriodMap.has(p));
+  const periodValues = periodLabels.map(p => byPeriodMap.get(p));
 
-document.getElementById("fPeriod").addEventListener("change", render);
-document.getElementById("fPlanCat").addEventListener("change", render);
-document.getElementById("fState").addEventListener("change", render);
-document.getElementById("resetBtn").addEventListener("click", () => {
-  document.getElementById("fPeriod").value = "__ALL__";
-  document.getElementById("fPlanCat").value = "__ALL__";
-  document.getElementById("fState").value = "__ALL__";
-  // reset new_type chips too
-  newTypeSelection.clear();
-  NEW_TYPE_ORDER.forEach(v => newTypeSelection.add(v));
-  document.querySelectorAll(".chip").forEach(c => c.classList.add("active"));
-  render();
+  const byPlan = aggBy(rows, 'category');
+  const planLabels = byPlan.map(d => d[0]);
+  const planValues = byPlan.map(d => d[1]);
+
+  const baseOpts = {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        backgroundColor:'#0f172a', padding:10, titleFont:{size:12,weight:'600'}, bodyFont:{size:12},
+        callbacks:{ label: (ctx) => ' ' + fmtCompact(ctx.parsed.y ?? ctx.parsed.x) }
+      },
+    },
+    scales:{
+      x:{ grid:{display:false}, ticks:{color:'#64748b',font:{size:11}} },
+      y:{ grid:{color:'#eef2f6',drawBorder:false}, ticks:{color:'#64748b',font:{size:11}, callback:(v)=>fmtCompact(v)} }
+    }
+  };
+
+  if (chartPeriod) chartPeriod.destroy();
+  chartPeriod = new Chart(document.getElementById('chartPeriod'), {
+    type:'bar',
+    data:{
+      labels: periodLabels,
+      datasets:[{
+        data: periodValues,
+        backgroundColor: periodLabels.map((_,i)=> PALETTE[i % PALETTE.length]),
+        borderRadius:4, maxBarThickness:64,
+      }]
+    },
+    options: baseOpts
+  });
+
+  // Horizontal bars for plan types (labels can be long)
+  const horizOpts = JSON.parse(JSON.stringify(baseOpts));
+  horizOpts.indexAxis = 'y';
+  horizOpts.scales = {
+    x:{ grid:{color:'#eef2f6',drawBorder:false}, ticks:{color:'#64748b',font:{size:11},callback:(v)=>fmtCompact(v)} },
+    y:{ grid:{display:false}, ticks:{color:'#334155',font:{size:11.5,weight:'500'}} }
+  };
+  horizOpts.plugins.tooltip.callbacks = { label:(ctx)=> ' ' + fmtCompact(ctx.parsed.x) };
+
+  if (chartPlan) chartPlan.destroy();
+  chartPlan = new Chart(document.getElementById('chartPlan'), {
+    type:'bar',
+    data:{
+      labels: planLabels,
+      datasets:[{
+        data: planValues,
+        backgroundColor: planLabels.map((_,i)=> PALETTE[i % PALETTE.length]),
+        borderRadius:4, maxBarThickness:24,
+      }]
+    },
+    options: horizOpts
+  });
+}
+
+function renderTable(rows){
+  if (rows.length === 0){
+    document.getElementById('tableHost').innerHTML = '<div class="empty">No rows match the current filters.</div>';
+    return;
+  }
+  const planMap = new Map();
+  let gCount=0, gSum=0;
+  for (const r of rows){
+    gCount += r.count; gSum += r.sum;
+    if (!planMap.has(r.plan)) planMap.set(r.plan, {count:0,sum:0,sales:new Map()});
+    const p = planMap.get(r.plan);
+    p.count += r.count; p.sum += r.sum;
+    if (!p.sales.has(r.sale)) p.sales.set(r.sale, {count:0,sum:0,items:[]});
+    const s = p.sales.get(r.sale);
+    s.count += r.count; s.sum += r.sum; s.items.push(r);
+  }
+
+  const out = [];
+  out.push('<table><thead><tr><th>Plan_type</th><th>Sale_type</th><th>New_Type</th><th class="num">Count</th><th class="num">Sum of Exclude Reley</th></tr></thead><tbody>');
+  const plans = Array.from(planMap.keys()).sort();
+  for (const plan of plans){
+    const pB = planMap.get(plan);
+    const sales = Array.from(pB.sales.keys()).sort();
+    let planRowspan = 1;
+    for (const sale of sales) planRowspan += pB.sales.get(sale).items.length + 1;
+    let firstPlan = true;
+    for (const sale of sales){
+      const sB = pB.sales.get(sale);
+      const saleRowspan = sB.items.length + 1;
+      let firstSale = true;
+      for (const it of sB.items){
+        let tr = '<tr>';
+        if (firstPlan){ tr += `<td class="plan" rowspan="${planRowspan}">${esc(plan)}</td>`; firstPlan=false; }
+        if (firstSale){ tr += `<td class="sale" rowspan="${saleRowspan}">${esc(sale)}</td>`; firstSale=false; }
+        tr += `<td>${esc(it.new_type)}</td><td class="num">${fmt(it.count)}</td><td class="num">${fmt2(it.sum)}</td></tr>`;
+        out.push(tr);
+      }
+      out.push(`<tr class="subtotal-sale"><td><em>Subtotal — ${esc(sale)}</em></td><td class="num">${fmt(sB.count)}</td><td class="num">${fmt2(sB.sum)}</td></tr>`);
+    }
+    out.push(`<tr class="subtotal-plan"><td colspan="2"><strong>Subtotal — ${esc(plan)}</strong></td><td class="num"><strong>${fmt(pB.count)}</strong></td><td class="num"><strong>${fmt2(pB.sum)}</strong></td></tr>`);
+  }
+  out.push(`</tbody><tfoot><tr><td colspan="3">Grand Total</td><td class="num">${fmt(gCount)}</td><td class="num">${fmt2(gSum)}</td></tr></tfoot></table>`);
+  document.getElementById('tableHost').innerHTML = out.join('');
+}
+
+function renderKPIs(rows){
+  let count=0, sum=0;
+  for (const r of rows){ count += r.count; sum += r.sum; }
+  document.getElementById('kRows').textContent = fmt(count);
+  document.getElementById('kSum').textContent = fmtCompact(sum);
+  document.getElementById('kAvg').textContent = count ? fmtCompact(sum/count) : '—';
+  document.getElementById('kGroups').textContent = fmt(rows.length);
+}
+
+function updateFilterNote(f){
+  const parts = [];
+  if (f.period !== 'All') parts.push(`Period: ${f.period}`);
+  if (f.plan   !== 'All') parts.push(`Plan: ${f.plan}`);
+  if (f.state  !== 'All') parts.push(`State: ${f.state}`);
+  document.getElementById('tableNote').textContent = parts.length ? parts.join(' · ') : 'No filters applied';
+}
+
+function refresh(){
+  const f = getFilters();
+  const rows = applyFilters(DATA, f);
+  renderKPIs(rows);
+  renderCharts(rows);
+  renderTable(rows);
+  updateFilterNote(f);
+}
+
+['fPeriod','fPlan','fState'].forEach(id => document.getElementById(id).addEventListener('change', refresh));
+document.getElementById('resetBtn').addEventListener('click', () => {
+  ['fPeriod','fPlan','fState'].forEach(id => document.getElementById(id).value = 'All');
+  refresh();
 });
 
-render();
+refresh();
 </script>
 </body>
 </html>
